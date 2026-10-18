@@ -171,10 +171,11 @@
     .recency-slider:focus-visible { outline: 2px solid #E05340; outline-offset: 2px; border-radius: 8px; }
     @media (max-width: 767px) { .leaflet-top.leaflet-right { top: calc(var(--map-toolbar-h, 170px) + 24px); } }
     #bottomNav { bottom: max(16px, env(safe-area-inset-bottom)); transition: transform .22s ease, opacity .18s ease, visibility 0s; }
+    #bottomNav > div { box-shadow: 2px 2px 0 #1C1917, 0 10px 28px #1C191742, 0 3px 8px #1C191724; }
     .nav-is-collapsed #bottomNav { transform: translateY(calc(100% + 32px + env(safe-area-inset-bottom))); opacity: 0; visibility: hidden; transition: transform .22s ease, opacity .18s ease, visibility 0s .22s; }
     #navReveal { position: fixed; bottom: max(4px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 40; min-width: 80px; min-height: 44px; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease; }
     .nav-is-collapsed #navReveal { opacity: 1; visibility: visible; pointer-events: auto; }
-    .nav-handle-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: #FAF7F2F5; border: 1px solid #1C19175C; border-radius: 999px; box-shadow: 0 1px 2px #1C19171A; font-size: 11px; font-weight: 600; color: #44403C; }
+    .nav-handle-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: #FAF7F2F5; border: 1px solid #1C19175C; border-radius: 999px; box-shadow: 0 3px 10px #1C191729, 0 1px 2px #1C19171A; font-size: 11px; font-weight: 600; color: #44403C; }
   </style>
 <meta name="robots" content="noindex,nofollow">
 </head>
@@ -965,7 +966,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:13:50.558Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:16:53.434Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1128,7 +1129,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:13:50.558Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:16:53.434Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
