@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Twin Cities Coffee Radar ✨ Seasonal Drinks & Matcha</title>
+  <meta name="description" content="Find seasonal coffee drinks and specialty matcha at independent cafes around Minneapolis and St. Paul. Browse the latest drops, flavors, and cafe map.">
+
+  <!-- Google Fonts: Space Grotesk (Bold Display) & Plus Jakarta Sans (Clean Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Space Grotesk"', 'sans-serif'],
+            title: ['"Dela Gothic One"', 'sans-serif'],   // logo, headings, drink names
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            butter: { 50: '#FFFEF7', 100: '#FFFBEA', 200: '#FFF3C4', 300: '#FDE68A' },
+            oat: { 50: '#FAF7F2', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4', 900: '#2A201A' },
+            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#FF6B57', 600: '#E05340' },
+            matcha: { 50: '#F2FBF5', 100: '#DCFCE7', 200: '#BBF7D0', 400: '#4ADE80', 600: '#16A34A', 800: '#166534', 900: '#14532D' },
+            charcoal: { 900: '#1C1917', 800: '#292524', 700: '#44403C' }
+          },
+          boxShadow: {
+            'pop': '4px 4px 0px #1C1917',
+            'pop-sm': '2px 2px 0px #1C1917',
+            'pop-lg': '6px 6px 0px #1C1917',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { --header-h: 57px; }
+    body {
+      background-color: #FAF7F2;
+      color: #1C1917;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .neo-card {
+      border: 2px solid #1C1917;
+      box-shadow: 4px 4px 0px #1C1917;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .neo-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #1C1917; }
+
+    .neo-btn {
+      border: 2px solid #1C1917;
+      box-shadow: 3px 3px 0px #1C1917;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    .neo-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #1C1917; }
+
+    /* Masonry / bento grid. Every card takes the shape of its photo, so nothing
+       is cropped and nothing is letterboxed. Row spans are measured in JS on a
+       4px track, so cards pack tightly with an even gap and no holes. */
+    .masonry {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: 4px;
+      column-gap: 14px;
+      grid-auto-flow: row dense;
+    }
+    @media (min-width: 640px) {
+      .masonry { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .masonry > * { align-self: start; }
+
+    #detailModal { transition: opacity 0.25s ease; }
+    #detailSheet { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    /* Centered dialog on wider screens: rise in a little instead of sliding up from the bottom. */
+    @media (min-width: 768px) { #detailSheet.translate-y-full { transform: translateY(24px) scale(0.97); } }
+
+    /* Map tab: fills the viewport between the header and the screen bottom. */
+    #viewMap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 20; }
+    #mapCanvas { position: absolute; inset: 0; background: #FAF7F2; }
+    .leaflet-container { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+    .cafe-pin { background: none; border: none; }
+    .cafe-pin:focus { outline: none; }
+    .cafe-pin:focus-visible > div { outline: 3px solid #FF6B57; outline-offset: 3px; }
+    .cafe-pin > div { transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .2s ease; }
+    /* Selected cafe: bigger pin, white + ink ring, pulsing halo behind it. */
+    .cafe-pin.is-selected > div {
+      transform: scale(1.35);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 6px #1C1917, 3px 3px 0 6px #1C1917;
+    }
+    /* The halo sits on Leaflet's icon wrapper, so it paints behind the scaled pin. */
+    .cafe-pin.is-selected::before {
+      content: ''; position: absolute; inset: -6px; border-radius: 9999px; z-index: -1;
+      background: #FF6B57; animation: pinPulse 1.6s ease-out infinite; pointer-events: none;
+    }
+    @keyframes pinPulse { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.4); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .cafe-pin.is-selected::before { animation: none; opacity: .3; transform: scale(1.5); } }
+
+    /* Cafe panel over the map: bottom sheet on phones, side card on desktop. */
+    #cafePanel {
+      position: absolute; z-index: 500;
+      left: 12px; right: 12px; bottom: 92px;
+      max-height: min(58vh, calc(100% - var(--map-toolbar-h, 170px) - 120px));
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    }
+    @media (min-width: 768px) {
+      #cafePanel { left: 16px; right: auto; top: calc(var(--map-toolbar-h, 170px) + 24px); bottom: 96px; width: 380px; max-height: none; }
+    }
+    #cafePanel.is-hidden { transform: translateY(24px); opacity: 0; pointer-events: none; }
+
+    /* Save button: outline heart when off, solid white heart on coral when on. */
+    .fav-btn { background: #fff; color: #1C1917; transition: background-color .15s ease, color .15s ease, transform .1s ease; }
+    .fav-btn:hover { transform: scale(1.08); }
+    .fav-btn svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 2.4; }
+    .fav-btn.is-on { background: #FF6B57; color: #fff; }
+    .fav-btn.is-on svg { fill: currentColor; }
+    .fav-btn.pop { animation: favPop .3s ease; }
+    @keyframes favPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+    .drink-art svg { display: block; width: 100%; height: 100%; }
+    .hero-stage { background-image: radial-gradient(#1C191724 1.2px, transparent 1.4px); background-size: 12px 12px; min-height: 170px; }
+    .hero-stage svg { overflow: visible; }
+    .filter-select {
+      display: block; width: 100%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%231C1917' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center / 11px 8px;
+      border: 2px solid #1C1917; box-shadow: 3px 3px 0px #1C1917; border-radius: 12px;
+      padding: 7px 32px 7px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px;
+      color: #1C1917; cursor: pointer;
+    }
+    .filter-select:focus-visible { outline: 2px solid #FF6B57; outline-offset: 2px; }
+    .filter-select.is-set { background-color: #FFF3C4; }
+    .dd-menu {
+      position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; z-index: 35;
+      max-height: min(300px, 55vh); overflow-y: auto; overscroll-behavior: contain;
+      background: #fff; border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; border-radius: 12px; padding: 4px;
+      scroll-margin-bottom: 100px;   /* clear the floating bottom nav when scrolled into view */
+      scrollbar-width: thin; scrollbar-color: #1C191733 transparent;
+    }
+    .dd-option {
+      display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 8px 10px; border-radius: 8px; text-align: left; white-space: nowrap;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; color: #1C1917;
+    }
+    .dd-option:hover, .dd-option:focus-visible { background: #FFFBEA; outline: none; }
+    .dd-option[aria-selected="true"] { background: #1C1917; color: #fff; }
+    .dd-option .dd-count { opacity: .55; font-size: 11px; }
+    /* Filler cards that even out the ragged bottom of the masonry grid. */
+    .filler-card {
+      border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; border-radius: 1rem; overflow: hidden;
+      background-image: radial-gradient(#1C191722 1.2px, transparent 1.4px); background-size: 12px 12px;
+    }
+    .filler-card svg { display: block; overflow: visible; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+    a:focus-visible, button:focus-visible { outline: 3px solid #E05340; outline-offset: 3px; }
+    .scroll-fade { scrollbar-width: thin; scrollbar-color: #1C191733 transparent; }
+    .recency-control { background: #FAF7F2F5; border: 1px solid #1C191724; border-radius: 12px; padding: 8px 12px 5px; }
+    .recency-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 11px; color: #6B625B; }
+    .recency-heading output { color: #44403C; font-weight: 600; }
+    .recency-slider { appearance: none; display: block; width: 100%; height: 20px; margin: 2px 0 0; background: transparent; cursor: pointer; }
+    .recency-slider::-webkit-slider-runnable-track { height: 3px; background: #DCCFC5; border-radius: 3px; }
+    .recency-slider::-moz-range-track { height: 3px; background: #DCCFC5; border-radius: 3px; }
+    .recency-slider::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; margin-top: -5px; border: 2px solid #FAF7F2; border-radius: 50%; background: #74665A; box-shadow: 0 0 0 1px #74665A; }
+    .recency-slider::-moz-range-thumb { width: 9px; height: 9px; border: 2px solid #FAF7F2; border-radius: 50%; background: #74665A; box-shadow: 0 0 0 1px #74665A; }
+    .recency-slider:focus-visible { outline: 2px solid #E05340; outline-offset: 2px; border-radius: 8px; }
+    @media (max-width: 767px) { .leaflet-top.leaflet-right { top: calc(var(--map-toolbar-h, 170px) + 24px); } }
+  </style>
+<meta name="robots" content="noindex,nofollow">
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-coral-400 selection:text-black">
+
+  <!-- TOP BRAND HEADER -->
+  <header id="appHeader" class="sticky top-0 z-30 bg-[#FAF7F2]/95 backdrop-blur-md border-b-2 border-charcoal-900 px-4 py-3">
+    <div class="max-w-md sm:max-w-xl md:max-w-3xl mx-auto flex items-center justify-between gap-3">
+      <a href="#home" onclick="switchTab('home'); return false;" class="font-title font-normal text-xl tracking-tight text-charcoal-900">
+        coffee radar<span class="text-coral-500">.</span>
+      </a>
+      <a href="/coffee-radar-preview/about/" class="font-display font-bold text-xs rounded-full border-2 border-charcoal-900 px-3 py-1.5 bg-butter-100 hover:bg-butter-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">About</a>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="flex-1 max-w-md sm:max-w-xl md:max-w-3xl mx-auto w-full px-4 pt-4 pb-32">
+
+    <!-- HOME -->
+    <section id="viewHome" class="space-y-4"><p class="text-[11px] text-charcoal-700 py-2">Preview · Oct 17, 2026 snapshot · data stays fixed until the next update.</p>
+      <!-- Hero: our own illustration. Real drinks start in the grid below. -->
+      <div class="neo-card bg-coral-500 text-charcoal-900 rounded-3xl overflow-hidden sm:flex">
+        <div class="p-5 sm:p-6 sm:w-1/2 flex flex-col justify-center">
+          <h1 class="font-title font-normal text-3xl sm:text-[32px] uppercase leading-[0.95]">Twin Cities Radar</h1>
+          <p class="text-sm font-medium mt-2 text-charcoal-900/85">Seasonal drinks from independent cafes, tracked as they drop.</p>
+          <p id="heroStats" class="mt-3 text-[11px] font-mono font-bold text-charcoal-900/80"></p>
+        </div>
+        <div id="heroArt" class="drink-art hero-stage bg-butter-100 border-t-2 sm:border-t-0 sm:border-l-2 border-charcoal-900 aspect-[40/19] sm:aspect-auto sm:flex-1"></div>
+      </div>
+
+      <div class="flex items-center bg-white rounded-2xl border-2 border-charcoal-900 shadow-pop px-3.5 py-2.5 gap-2">
+        <span class="text-base" aria-hidden="true">🔍</span>
+        <input type="text" role="searchbox" enterkeyhint="search" autocomplete="off" id="searchInput" placeholder="Search syrups, cafes, cardamom, matcha..."
+          class="w-full min-w-0 bg-transparent text-sm font-medium focus:outline-none placeholder:text-charcoal-700/60" oninput="onSearchChange()">
+        <button id="clearSearchBtn" onclick="clearSearch()" aria-label="Clear search" class="hidden text-xs bg-oat-200 hover:bg-oat-300 px-2 py-1 rounded-lg font-bold border border-charcoal-900">✕</button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Custom dropdowns: native selects flip upward near the screen bottom -->
+        <div id="neighborhoodDD" class="dd relative flex-1 min-w-[150px]"></div>
+        <div id="typeDD" class="dd relative flex-1 min-w-[120px]"></div>
+        <button id="filterPhotosToggle" onclick="togglePhotosSearchFilter()" aria-pressed="false" class="neo-btn px-3 py-2 rounded-xl bg-white font-display font-bold text-xs whitespace-nowrap">📸 With photo</button>
+        <button onclick="resetSearchFilters()" class="neo-btn px-3 py-2 rounded-xl bg-coral-400 hover:bg-coral-500 text-charcoal-900 text-xs font-display font-bold whitespace-nowrap">↺ Reset</button>
+      </div>
+
+      <div class="recency-control">
+        <div class="recency-heading"><label for="homeRecency">New posts & drops</label><output for="homeRecency" data-recency-label>30+ days</output></div>
+        <input id="homeRecency" type="range" min="1" max="4" step="1" value="4" aria-valuetext="30+ days, all current drops" class="recency-slider" oninput="setDropRecency(this.value === '4' ? 30 : Number(this.value) * 7)">
+      </div>
+
+      <p id="searchResultsCount" class="text-xs font-display font-bold text-charcoal-700 pt-1">Searching...</p>
+
+      <div id="searchResultsGrid" class="masonry" data-fillers="1"></div>
+
+      <nav id="searchPager" class="hidden flex items-center justify-center gap-1.5 pt-2" aria-label="Pages"></nav>
+
+      <div id="searchEmptyState" class="hidden text-center py-16 bg-white rounded-2xl border-2 border-dashed border-charcoal-900/30 p-6">
+        <div class="text-4xl mb-2" aria-hidden="true">☕💨</div>
+        <h3 class="font-title font-normal text-sm">No seasonal drops found</h3>
+        <p class="text-xs text-charcoal-700 mt-1">Try "maple", "cardamom", "matcha", or reset filters.</p>
+        <button onclick="resetSearchFilters()" class="mt-3 neo-btn px-3 py-1.5 rounded-xl bg-butter-200 font-display font-bold text-xs">Reset all filters</button>
+      </div>
+    </section>
+
+    <!-- FAVORITES -->
+    <section id="viewFavorites" class="space-y-4 hidden">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h2 class="font-title font-normal text-xl">Your Saved Radar</h2>
+          <p class="text-xs text-charcoal-700">Seasonal drinks bookmarked on this device</p>
+        </div>
+        <span id="favoritesCountBadge" class="shrink-0 text-xs font-display font-bold bg-coral-500 text-white px-2.5 py-1 rounded-full border-2 border-charcoal-900 shadow-pop-sm">0 saved</span>
+      </div>
+      <div id="favoritesGrid" class="masonry"></div>
+      <div id="favoritesEmptyState" class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-charcoal-900/30 p-6">
+        <div class="text-5xl mb-3" aria-hidden="true">❤️☕</div>
+        <h3 class="font-title font-normal text-base">No saved drops yet</h3>
+        <p class="text-xs text-charcoal-700 mt-1 max-w-xs mx-auto">Tap the heart on any drink to build your seasonal list.</p>
+        <button onclick="switchTab('home')" class="mt-4 neo-btn px-4 py-2 rounded-xl bg-coral-500 text-white font-display font-bold text-xs">Browse drops</button>
+      </div>
+    </section>
+
+    <!-- CAFES DIRECTORY -->
+    <section id="viewCafes" class="space-y-4 hidden">
+      <div>
+        <h2 class="font-title font-normal text-xl">Twin Cities Cafes</h2>
+        <p id="cafesSubtitle" class="text-xs text-charcoal-700">Independent roasters &amp; cafes</p>
+      </div>
+      <input type="search" id="cafeSearchInput" placeholder="Filter cafes by name or neighborhood..."
+        class="w-full bg-white rounded-2xl border-2 border-charcoal-900 shadow-pop px-3.5 py-2.5 text-sm font-medium focus:outline-none" oninput="onCafeSearchChange()">
+      <div id="cafesListContainer" class="space-y-3"></div>
+    </section>
+  </main>
+
+  <!-- MAP (top-level tab, fixed full-bleed) -->
+  <section id="viewMap" class="hidden">
+    <div id="mapCanvas"></div>
+
+    <!-- Map toolbar -->
+    <div id="mapToolbar" class="absolute z-[600] top-3 left-3 right-3 md:right-auto md:w-[380px] md:left-4 flex flex-col gap-2 pointer-events-none">
+      <div class="flex items-center bg-white rounded-xl border-2 border-charcoal-900 shadow-pop-sm px-3 py-2 gap-2 pointer-events-auto">
+        <span class="text-xs" aria-hidden="true">🔍</span>
+        <input type="search" id="mapSearchInput" oninput="onMapSearchInput()" placeholder="Cafe, neighborhood or drink..."
+          class="w-full min-w-0 bg-transparent text-xs font-medium focus:outline-none placeholder:text-charcoal-700/70">
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+        <button onclick="setMapFilter('drops')" data-map-filter="drops" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">✨ Has drops</button>
+        <button onclick="setMapFilter('matcha')" data-map-filter="matcha" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">🍵 Matcha</button>
+        <button onclick="setMapFilter('all')" data-map-filter="all" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">All cafes</button>
+        <span id="mapSpotCount" class="ml-auto px-2 py-1 rounded-lg bg-butter-100 border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm whitespace-nowrap"></span>
+      </div>
+      <div class="recency-control pointer-events-auto">
+        <div class="recency-heading"><label for="mapRecency">New posts & drops</label><output for="mapRecency" data-recency-label>30+ days</output></div>
+        <input id="mapRecency" type="range" min="1" max="4" step="1" value="4" aria-valuetext="30+ days, all current drops" class="recency-slider" oninput="setDropRecency(this.value === '4' ? 30 : Number(this.value) * 7)">
+      </div>
+      <p id="mapEmptyState" role="status" class="hidden bg-white rounded-xl border-2 border-charcoal-900 p-3 text-xs pointer-events-auto">No cafes match. Try a wider date range or another map filter.</p>
+    </div>
+
+    <!-- Cafe panel (replaces Leaflet popups, which overflowed the screen) -->
+    <aside id="cafePanel" class="is-hidden flex flex-col bg-oat-50 rounded-2xl border-2 border-charcoal-900 shadow-pop overflow-hidden" aria-live="polite">
+      <div id="cafePanelBody" class="flex-1 overflow-y-auto overscroll-contain scroll-fade"></div>
+    </aside>
+  </section>
+
+  <!-- DRINK DETAIL: bottom sheet on phones, centered dialog from md up -->
+  <div id="detailModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex-col justify-end md:justify-center md:p-6 opacity-0" onclick="closeDetailModal(event)">
+    <div id="detailSheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+      class="bg-white rounded-t-3xl md:rounded-3xl border-t-2 border-x-2 md:border-2 border-charcoal-900 shadow-2xl max-w-md sm:max-w-xl mx-auto w-full max-h-[92vh] md:max-h-full flex flex-col transform translate-y-full"
+      onclick="event.stopPropagation()">
+      <div class="shrink-0 pt-3 pb-2 flex justify-center md:hidden">
+        <button class="w-12 h-1.5 bg-charcoal-900/20 rounded-full" aria-label="Close" onclick="closeDetailSheet()"></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto overscroll-contain px-5 md:pt-5">
+        <!-- Photo at its own proportions; the frame hugs the image -->
+        <div id="modalMedia" class="relative mx-auto mb-4 w-fit max-w-full">
+          <img id="modalImg" src="" alt="" class="block max-w-full max-h-[52vh] w-auto h-auto rounded-2xl border-2 border-charcoal-900 shadow-pop-sm">
+          <div id="modalPlaceholder" class="hidden"></div>
+          <div id="modalPriceBadge" class="hidden absolute bottom-3 right-3 bg-white font-display font-bold text-sm px-2.5 py-1 rounded-full border-2 border-charcoal-900 shadow-pop-sm"></div>
+          <button id="modalFavBtn" onclick="toggleCurrentModalFavorite()" aria-label="Save drink" aria-pressed="false" class="fav-btn absolute top-3 right-3 w-9 h-9 rounded-full border-2 border-charcoal-900 shadow-pop-sm flex items-center justify-center"></button>
+        </div>
+
+        <div class="mb-3">
+          <div class="flex items-center gap-1.5 mb-2 flex-wrap" id="modalTagBadges"></div>
+          <h2 id="modalTitle" class="font-title font-normal text-xl leading-snug"></h2>
+          <button id="modalCafe" onclick="openActiveCafeOnMap()" class="text-xs font-display font-bold text-coral-600 mt-0.5 hover:underline text-left"></button>
+        </div>
+
+        <div class="bg-oat-50 rounded-xl p-3 border-2 border-charcoal-900/20 mb-4">
+          <h4 class="text-[10px] font-display font-bold uppercase text-charcoal-700 tracking-wider mb-1">Tasting notes</h4>
+          <p id="modalDesc" class="text-xs text-charcoal-800 leading-relaxed"></p>
+        </div>
+
+        <details id="modalCaptionBlock" class="hidden mb-4 rounded-xl border-2 border-charcoal-900/20 bg-butter-50 overflow-hidden">
+          <summary class="cursor-pointer select-none px-3 py-2 text-[10px] font-display font-bold uppercase text-charcoal-700 tracking-wider flex items-center justify-between gap-2">
+            <span id="modalCaptionLabel">From the original post</span>
+            <span class="text-charcoal-700/60 font-mono text-[9px] normal-case">tap to expand</span>
+          </summary>
+          <p id="modalCaption" class="px-3 pb-3 text-xs text-charcoal-800 leading-relaxed whitespace-pre-line break-words"></p>
+        </details>
+
+      </div>
+
+      <div class="shrink-0 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-2 border-t border-charcoal-900/10">
+        <button id="modalMapBtn" onclick="openActiveCafeOnMap()" class="w-full neo-btn py-3 rounded-xl bg-butter-100 text-charcoal-900 font-display font-bold text-xs flex items-center justify-center gap-2">🗺️ Show on map</button>
+        <!-- Half and half; Close takes the row when there is no source link. -->
+        <div class="flex gap-2">
+          <a id="modalSourceBtn" href="#" target="_blank" rel="noopener" class="flex-1 basis-0 min-w-0 neo-btn py-2.5 rounded-xl bg-sky-100 text-charcoal-900 font-display font-bold text-xs text-center truncate px-2">📸 View original post</a>
+          <button onclick="closeDetailSheet()" class="flex-1 basis-0 neo-btn py-2.5 rounded-xl bg-coral-400 text-charcoal-900 font-display font-bold text-xs">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING BOTTOM NAV -->
+  <nav class="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none" aria-label="Main">
+    <div class="max-w-sm mx-auto bg-oat-100 text-charcoal-900 rounded-2xl border-2 border-charcoal-900 shadow-pop-sm p-1.5 flex items-center justify-around gap-1.5 pointer-events-auto">
+      <button onclick="switchTab('home')" id="navHome" class="nav-tab"><span class="text-base" aria-hidden="true">🏠</span><span class="text-[10px]">Home</span></button>
+      <button onclick="switchTab('map')" id="navMap" class="nav-tab"><span class="text-base" aria-hidden="true">🗺️</span><span class="text-[10px]">Map</span></button>
+      <button onclick="switchTab('favorites')" id="navFavorites" class="nav-tab relative"><span class="text-base" aria-hidden="true">❤️</span><span class="text-[10px]">Saved</span><span id="navFavBadge" class="hidden absolute top-1 right-2 w-2 h-2 rounded-full bg-coral-500"></span></button>
+      <button onclick="switchTab('cafes')" id="navCafes" class="nav-tab"><span class="text-base" aria-hidden="true">☕</span><span class="text-[10px]">Cafes</span></button>
+    </div>
+  </nav>
+
+  <script src="/coffee-radar-preview/js/drink-art.js"></script>
+  <script src="/coffee-radar-preview/js/drop-recency.js"></script>
+  <script>
+    // ------------------------------------------------------------ state
+    let allDrinks = [];
+    let allCafes = [];
+    let cafesById = new Map();
+    let drinksByBrand = new Map();
+    let currentTab = 'home';
+    let activeModalDrink = null;
+
+    let searchNeighborhood = 'All';
+    let searchType = 'all';   // all | matcha | iced | hot
+    let searchPhotosOnly = false;
+    const PAGE_SIZE = 30;
+    let searchPage = 1;
+    let lastFilterKey = '';
+    let lastFilteredCount = 0;
+    let dropRecencyDays = 30;
+
+    function setDropRecency(value) {
+      dropRecencyDays = Math.max(7, Math.min(30, Number(value) || 30));
+      document.querySelectorAll('.recency-slider').forEach(input => {
+        input.value = dropRecencyDays === 30 ? 4 : dropRecencyDays / 7;
+        input.setAttribute('aria-valuetext', dropRecencyDays === 30 ? '30+ days, all current drops' : DropRecency.label(dropRecencyDays));
+      });
+      document.querySelectorAll('[data-recency-label]').forEach(el => el.textContent = DropRecency.label(dropRecencyDays));
+      runSearch();
+      updateMapMarkers();
+    }
+
+    let favorites = new Set();
+    try {
+      const saved = localStorage.getItem('coffee_radar_favs');
+      if (saved) favorites = new Set(JSON.parse(saved));
+    } catch (e) {}
+
+    const TABS = ['home', 'map', 'favorites', 'cafes'];
+    // Tabs are raised keys; the current one stays pressed in (shifted into its shadow, inner shade).
+    const NAV_BASE = 'nav-tab relative flex-1 min-w-0 py-2 px-1 rounded-xl border-2 border-charcoal-900 font-display font-bold text-xs flex flex-col items-center gap-0.5 transition';
+    const NAV_ON = 'bg-butter-300 text-charcoal-900 translate-x-[2px] translate-y-[2px] shadow-[inset_2px_2px_0_rgba(28,25,23,0.25)]';
+    const NAV_OFF = 'bg-white text-charcoal-700 shadow-pop-sm hover:bg-butter-100 hover:text-charcoal-900 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none';
+
+    // ------------------------------------------------------------ helpers
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function hasDrinkImage(d) { return Boolean(d && d.image_url && d.image_url.trim() !== ''); }
+    function flavorsOf(d) { try { return JSON.parse(d.flavor_profile || '[]'); } catch { return []; } }
+    function isMatcha(d) {
+      const hay = `${d.drink_name} ${d.description || ''} ${flavorsOf(d).join(' ')}`.toLowerCase();
+      return hay.includes('matcha');
+    }
+    function brandKey(c) {
+      const ig = (c.instagram || '').toLowerCase().replace(/^@/, '');
+      return ig || c.id;
+    }
+    function formatDropDate(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, day] = dateStr.split('T')[0].split('-').map(Number);
+      if (!y || !m || !day) return dateStr;
+      return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m - 1]} ${day}`;
+    }
+    const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path stroke-linejoin="round" d="M12 20.5s-7.5-4.6-9.2-9.3C1.6 7.8 3.9 4.5 7.3 4.5c2 0 3.6 1.1 4.7 2.8 1.1-1.7 2.7-2.8 4.7-2.8 3.4 0 5.7 3.3 4.5 6.7-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg>';
+    function favAttrs(on) { return `aria-label="${on ? 'Unsave' : 'Save'} drink" aria-pressed="${on}"`; }
+    function setFavButton(btn, on, animate = false) {
+      if (!btn.querySelector('svg')) btn.innerHTML = HEART_SVG;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on);
+      btn.setAttribute('aria-label', `${on ? 'Unsave' : 'Save'} drink`);
+      if (animate) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
+    }
+    function mix32(n) {   // integer hash with good avalanche, for stable shuffles
+      n ^= n >>> 16; n = Math.imul(n, 0x7feb352d); n ^= n >>> 15; n = Math.imul(n, 0x846ca68b); n ^= n >>> 16;
+      return n >>> 0;
+    }
+    function hashStr(s) { let h = 0; for (const ch of s || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
+
+    // Aspect ratio for a card, clamped so extreme panoramas or story-format
+    // images do not produce absurd tiles. Inside the clamp nothing is cropped.
+    function photoRatio(d) {
+      if (!d.image_w || !d.image_h) return 4 / 5;
+      return Math.min(4 / 3, Math.max(9 / 16, d.image_w / d.image_h));
+    }
+
+    // Drawn placeholder for drinks without a verified photo
+    // (public/js/drink-art.js): vessel, liquid colour and flavor icons from the
+    // drink's own data, on a colour picked per cafe. It never repeats a picture
+    // across a cafe's cards and is always labelled as a drawing.
+    const TILE_THEMES = [
+      { bg: '#FFF3C4', ink: '#1C1917', accent: '#FF6B57' },
+      { bg: '#DCFCE7', ink: '#14532D', accent: '#16A34A' },
+      { bg: '#FFE3DE', ink: '#7A2418', accent: '#E05340' },
+      { bg: '#E0F2FE', ink: '#0C3B5E', accent: '#0284C7' },
+      { bg: '#EDE9FE', ink: '#3B1F7A', accent: '#7C3AED' },
+      { bg: '#F5EFEB', ink: '#2A201A', accent: '#A16207' },
+    ];
+    function tileTheme(d) { return TILE_THEMES[hashStr(d.cafe_name) % TILE_THEMES.length]; }
+    function tileRatio() { return 5 / 4; }
+
+    function renderTileHTML(d, ratio = 5 / 4) {
+      return `<div class="drink-art absolute inset-0">${DrinkArt.svg(d, { ratio, theme: tileTheme(d) })}</div>`;
+    }
+
+    // ------------------------------------------------------------ filler cards
+    const FILLERS = [
+      { icons: ['bean', 'sugar', 'cream'], title: 'More drops brewing', sub: 'Cafes post new seasonal drinks all the time. Check back soon.' },
+      { icons: ['maple', 'cinnamon', 'apple'], title: 'Sip sip hooray', sub: 'Every drink here is a limited run. Catch them while they last.' },
+      { icons: ['tealeaf', 'honey'], title: 'Matcha mood?', sub: 'Filter down to just the green stuff.', action: ['🍵 Show matcha', "setSearchType('matcha')"], when: () => searchType !== 'matcha' },
+      { icons: ['pumpkin', 'spice'], title: 'Coffee crawl?', sub: 'See every cafe with a drop on the map.', action: ['🗺️ Open map', "switchTab('map')"] },
+      { icons: ['cardamom', 'ginger'], title: 'Try something new', sub: 'Search cardamom and see what turns up.', action: ['Search cardamom', "searchFor('cardamom')"] },
+      { icons: ['marshmallow', 'chocolate'], title: 'Keep the good ones', sub: 'Tap the heart on a drink to save it for later.' },
+      { icons: ['lavender', 'vanilla', 'honey'], title: 'Brewed locally', sub: 'Only independent Twin Cities cafes. No chains.' },
+    ];
+    function nextPageFiller() {
+      const left = lastFilteredCount - searchPage * PAGE_SIZE;
+      if (left <= 0) return null;
+      return { icons: ['donut', 'caramel'], title: 'Still thirsty?', sub: `${left} more drop${left > 1 ? 's' : ''} on the next page.`,
+               action: ['Next page →', `goToPage(${searchPage + 1})`] };
+    }
+    // Stable per page, so a resize does not reshuffle the cards.
+    function fillerPicks() {
+      const pool = FILLERS.filter(f => !f.when || f.when());
+      const seed = hashStr(`${searchPage}|${lastFilterKey}`);
+      const shuffled = pool.map((f, i) => [mix32(seed ^ mix32(i + 1)), f]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+      const next = nextPageFiller();
+      return next ? [next, ...shuffled] : shuffled;
+    }
+    function fillerBadges(icons, big) {
+      const spots = big
+        ? [[34, 34, -10, 20], [86, 26, 8, 17], [62, 70, 4, 18]]
+        : [[26, 30, -10, 17], [66, 28, 8, 17], [106, 32, -4, 17]];
+      const used = icons.slice(0, big ? 3 : 3);
+      const w = big ? 120 : 132, h = big ? 96 : 60;
+      return `<svg viewBox="0 0 ${w} ${h}" class="w-full h-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        ${used.map((id, i) => DrinkArt.badge(id, ...spots[i])).join('')}</svg>`;
+    }
+    function fillerCardHTML(f, h, col) {
+      const t = TILE_THEMES[(hashStr(f.title) + col) % TILE_THEMES.length];
+      const action = f.action
+        ? `<button onclick="${f.action[1]}" class="neo-btn self-start mt-2 px-2.5 py-1 rounded-lg bg-white text-[11px] font-display font-bold text-charcoal-900 whitespace-nowrap">${esc(f.action[0])}</button>` : '';
+      if (h < 130) {
+        // Too short for a button, so the whole card becomes the action.
+        const tag = f.action ? 'button' : 'div';
+        return `<${tag} ${f.action ? `onclick="${f.action[1]}" aria-label="${esc(f.action[0])}"` : ''}
+          class="filler-card w-full text-left flex items-center gap-2 px-3" style="height:${h}px;background-color:${t.bg};color:${t.ink}">
+          <div class="shrink-0 ${h < 80 ? 'w-8 h-8' : 'w-10 h-10'}"><svg viewBox="-18 -18 38 38" class="w-full h-full" aria-hidden="true">${DrinkArt.badge(f.icons[0], 0, 0, -8, 15)}</svg></div>
+          <p class="font-title text-[13px] leading-tight min-w-0">${esc(f.title)}${f.action ? ' <span aria-hidden="true">→</span>' : ''}</p></${tag}>`;
+      }
+      const showSub = h >= 170, showAction = h >= 210;
+      return `<div class="filler-card flex flex-col p-3" style="height:${h}px;background-color:${t.bg};color:${t.ink}">
+        <div class="flex-1 min-h-0 max-h-[220px] py-1">${fillerBadges(f.icons, h >= 300)}</div>
+        <div class="shrink-0">
+          <p class="font-title text-[15px] leading-tight">${esc(f.title)}</p>
+          ${showSub ? `<p class="text-[11px] font-medium leading-snug mt-1 opacity-80 line-clamp-3">${esc(f.sub)}</p>` : ''}
+          ${showAction ? action : ''}
+        </div></div>`;
+    }
+    function searchFor(term) {
+      document.getElementById('searchInput').value = term;
+      onSearchChange();
+      document.getElementById('searchInput').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+
+    function ratioStyle(r) { return `aspect-ratio:${r.toFixed(4)}`; }
+
+    // ------------------------------------------------------------ cards
+    function createDrinkCardHTML(d) {
+      const isFav = favorites.has(d.id);
+      const photo = hasDrinkImage(d);
+      const ratio = photo ? photoRatio(d) : tileRatio();
+      const dateLabel = formatDropDate(DropRecency.sourceDate(d));
+      const matcha = isMatcha(d);
+
+      const media = photo
+        ? `<img src="${esc(d.image_url)}" alt="${esc(d.drink_name)}" loading="lazy" decoding="async"
+             class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+             onerror="this.closest('.card-media').innerHTML = renderTileHTML(allDrinks.find(x => x.id === ${d.id}))">`
+        : renderTileHTML(d);
+
+      return `
+        <article data-id="${d.id}" class="masonry-item">
+          <div onclick="openDrinkModalById(${d.id})" class="neo-card bg-white rounded-2xl overflow-hidden cursor-pointer group">
+            <div class="card-media relative overflow-hidden border-b-2 border-charcoal-900 bg-oat-100" style="${ratioStyle(ratio)}">
+              ${media}
+              ${d.price ? `<span class="absolute top-2 left-2 bg-white px-2 py-0.5 rounded-full border border-charcoal-900 shadow-pop-sm text-[10px] font-display font-bold">${esc(d.price)}</span>` : ''}
+              <button onclick="toggleFavorite(${d.id}, event)" ${favAttrs(isFav)}
+                class="fav-btn ${isFav ? 'is-on' : ''} absolute top-2 right-2 w-8 h-8 rounded-full border-2 border-charcoal-900 shadow-pop-sm flex items-center justify-center">${HEART_SVG}</button>
+              <div class="absolute bottom-2 inset-x-2 flex items-end justify-between gap-1 pointer-events-none">
+                ${matcha ? '<span class="bg-matcha-200 text-matcha-900 px-1.5 py-0.5 rounded-md border border-charcoal-900 text-[9px] font-display font-bold">MATCHA</span>' : '<span></span>'}
+                ${d.status === 'last_call' ? '<span class="bg-coral-500 text-white px-1.5 py-0.5 rounded border border-charcoal-900 text-[9px] font-display font-bold whitespace-nowrap">LAST CALL</span>'
+                  : dateLabel ? `<span class="bg-charcoal-900/85 text-white px-1.5 py-0.5 rounded border border-white/20 text-[9px] font-mono font-bold whitespace-nowrap">${esc(dateLabel)}</span>` : ''}
+              </div>
+            </div>
+            <div class="p-3">
+              <p class="text-[9px] font-display font-bold uppercase text-coral-600 truncate mb-0.5">${esc(d.cafe_name)}</p>
+              <h4 class="font-title font-normal text-[13px] sm:text-sm leading-snug line-clamp-2 mb-1 group-hover:text-coral-600 transition">${esc(d.drink_name)}</h4>
+              ${d.description ? `<p class="text-[11px] text-charcoal-700 line-clamp-3 leading-snug">${esc(d.description)}</p>` : ''}
+              <div class="mt-2 pt-2 border-t border-charcoal-900/10 flex items-center justify-between gap-2 text-[10px] font-display font-bold text-charcoal-700">
+                <span class="truncate">📍 ${esc(d.neighborhood || 'Twin Cities')}</span>
+                ${photo ? '' : '<span class="shrink-0 font-mono font-normal text-[9px] uppercase tracking-wide bg-oat-200 px-1.5 py-0.5 rounded">drawn · no photo yet</span>'}
+              </div>
+            </div>
+          </div>
+        </article>`;
+    }
+
+    // No multi-column tiles: a wide tile mid-grid leaves holes the neighbouring
+    // columns cannot fill. Variety comes from each card's own photo shape.
+    function renderGrid(el, drinks) {
+      el.innerHTML = drinks.map(d => createDrinkCardHTML(d)).join('');
+      layoutMasonry(el);
+    }
+
+    const ROW = 4;
+    const GAP = 14;   // vertical gap between cards; the card's margin is not part of its measured height
+    function layoutMasonry(grid) {
+      grid.querySelectorAll(':scope > .masonry-filler').forEach(f => f.remove());
+      const items = [...grid.children];
+      for (const item of items) {
+        const inner = item.firstElementChild;
+        if (!inner) continue;
+        const h = inner.getBoundingClientRect().height;
+        item.style.gridRowEnd = `span ${Math.max(1, Math.ceil((h + GAP) / ROW))}`;
+      }
+      if (grid.dataset.fillers) addFillers(grid, items);
+    }
+
+    // Columns end at different heights. Each short column gets a filler card
+    // placed exactly in the gap, so the grid ends on one level line.
+    function addFillers(grid, items) {
+      if (!items.length || !grid.offsetParent) return;
+      const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+      const box = grid.getBoundingClientRect();
+      const colW = (box.width + parseFloat(getComputedStyle(grid).columnGap)) / cols;
+      const ends = Array(cols).fill(0);      // grid line after each column's last card; 0 = empty column
+      const bottoms = Array(cols).fill(0);   // pixel bottom of each column's last card
+      for (const item of items) {
+        const r = item.getBoundingClientRect();
+        const col = Math.round((r.left - box.left) / colW);
+        const start = Math.round((r.top - box.top) / ROW) + 1;
+        const span = parseInt(item.style.gridRowEnd.split(' ')[1], 10) || 1;
+        ends[col] = Math.max(ends[col], start + span);
+        bottoms[col] = Math.max(bottoms[col], r.bottom - box.top);
+      }
+      const floor = Math.max(...bottoms);
+      const picks = fillerPicks();
+      let k = 0;
+      ends.forEach((end, c) => {
+        const h = Math.floor(floor - (end - 1) * ROW);   // from the grid line to the tallest card's bottom
+        if (!end || h < 60) return;
+        const el = document.createElement('div');
+        el.className = 'masonry-filler';
+        el.style.gridColumn = String(c + 1);
+        el.style.gridRow = `${end} / span ${Math.ceil(h / ROW)}`;
+        el.innerHTML = fillerCardHTML(picks[k++ % picks.length], h, c);
+        grid.appendChild(el);
+      });
+    }
+
+    const masonryObserver = new ResizeObserver(entries => {
+      const grids = new Set(entries.map(e => e.target.closest('.masonry')).filter(Boolean));
+      grids.forEach(layoutMasonry);
+    });
+    function observeGrid(grid) {
+      new MutationObserver(() => {
+        for (const item of grid.children) if (item.firstElementChild && !item.classList.contains('masonry-filler')) masonryObserver.observe(item.firstElementChild);
+      }).observe(grid, { childList: true });
+    }
+    document.querySelectorAll('.masonry').forEach(observeGrid);
+
+    // ------------------------------------------------------------ tabs
+    function switchTab(tab, { push = true } = {}) {
+      if (tab === 'search') tab = 'home';   // old deep link; search lives on home now
+      if (!TABS.includes(tab)) tab = 'home';
+      currentTab = tab;
+      TABS.forEach(t => {
+        const cap = t.charAt(0).toUpperCase() + t.slice(1);
+        document.getElementById('view' + cap).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById('nav' + cap);
+        btn.className = `${NAV_BASE} ${t === tab ? NAV_ON : NAV_OFF}`;
+        if (t === tab) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
+      });
+      document.body.style.overflow = tab === 'map' ? 'hidden' : '';
+      if (push && location.hash !== '#' + tab) history.replaceState(null, '', tab === 'home' ? '/coffee-radar-preview/' : '#' + tab);
+
+      if (tab === 'favorites') renderFavorites();
+      else if (tab === 'home') runSearch();
+      else if (tab === 'map') ensureMap();
+      if (tab !== 'map') window.scrollTo({ top: 0 });
+      // Grids hidden while laid out have zero height; measure now they are visible.
+      requestAnimationFrame(() => document.querySelectorAll('.masonry').forEach(layoutMasonry));
+    }
+
+    // ------------------------------------------------------------ favorites
+    function toggleFavorite(drinkId, e) {
+      if (e) e.stopPropagation();
+      favorites.has(drinkId) ? favorites.delete(drinkId) : favorites.add(drinkId);
+      try { localStorage.setItem('coffee_radar_favs', JSON.stringify([...favorites])); } catch (e) {}
+      updateFavBadge();
+      // Update hearts in place instead of re-rendering grids (keeps scroll & layout).
+      document.querySelectorAll(`[data-id="${drinkId}"] .fav-btn`).forEach(b => setFavButton(b, favorites.has(drinkId), true));
+      if (currentTab === 'favorites') renderFavorites();
+      if (activeModalDrink && activeModalDrink.id === drinkId) updateModalFavButton(true);
+    }
+    function updateFavBadge() {
+      document.getElementById('navFavBadge').classList.toggle('hidden', favorites.size === 0);
+      const n = allDrinks.filter(d => favorites.has(d.id)).length;
+      document.getElementById('favoritesCountBadge').textContent = `${n} saved`;
+    }
+
+    // ------------------------------------------------------------ init
+    async function init() {
+      try {
+        const [drinksRes, cafesRes] = await Promise.all([fetch('/coffee-radar-preview/data/drinks.json'), fetch('/coffee-radar-preview/data/cafes.json')]);
+        allDrinks = await drinksRes.json();
+        allCafes = await cafesRes.json();
+
+        cafesById.clear();
+        allCafes.forEach(c => cafesById.set(c.id, c));
+        allDrinks.forEach(d => {
+          const c = cafesById.get(d.cafe_id);
+          if (c) {
+            d.lat ??= c.lat; d.lon ??= c.lon;
+            d.neighborhood ||= c.neighborhood; d.address ||= c.address;
+          }
+        });
+
+        // Every location of a brand (same Instagram) serves the same drops.
+        drinksByBrand.clear();
+        allDrinks.forEach(d => {
+          const c = cafesById.get(d.cafe_id);
+          const key = c ? brandKey(c) : d.cafe_id;
+          if (!drinksByBrand.has(key)) drinksByBrand.set(key, []);
+          drinksByBrand.get(key).push(d);
+        });
+
+        const cafesWithDrops = new Set(allDrinks.map(d => d.cafe_id)).size;
+        const latest = allDrinks.map(d => (d.detected_at || '').slice(0, 10)).sort().pop();
+        document.getElementById('heroStats').textContent = `${allDrinks.length} drinks · ${cafesWithDrops} cafes${latest ? ` · updated ${formatDropDate(latest)}` : ''}`;
+        document.getElementById('cafesSubtitle').textContent = `${allCafes.length} independent roasters & cafes · ${cafesWithDrops} with current drops`;
+
+        buildNeighborhoodSelect();
+        renderCafesList(allCafes);
+        updateFavBadge();
+
+        // Deep links: /map, #favorites, /map?cafe=<id>
+        const params = new URLSearchParams(location.search);
+        const initial = location.pathname.startsWith('/map') ? 'map' : location.hash.slice(1);
+        switchTab(initial, { push: false });
+        if (params.get('cafe')) focusCafe(params.get('cafe'));
+      } catch (err) {
+        console.error('Failed to initialize app:', err);
+      }
+    }
+    window.addEventListener('hashchange', () => {
+      const t = location.hash.slice(1);
+      if ((TABS.includes(t) || t === 'search') && t !== currentTab) switchTab(t, { push: false });
+    });
+
+    // ------------------------------------------------------------ hero
+    // A fixed lineup drawn with drink-art.js: stand-ins for the season, not
+    // real listings, so they carry no names or links.
+    function heroArtSVG() {
+      const drink = (id, name, flavors, extra = {}) => ({ id, drink_name: name, flavor_profile: JSON.stringify(flavors), ...extra });
+      const W = 400, ground = 172;
+      const lineup = [
+        [drink('h1', 'Pumpkin Spice Latte', ['pumpkin', 'spice'], { is_hot: 1 }), 52, 'mug'],
+        [drink('h2', 'Iced Honey Matcha', ['matcha', 'honey'], { is_iced: 1 }), 140, 'iced'],
+        [drink('h3', 'Caramel Frappe', ['caramel', 'coffee', 'cream']), 222, 'blended'],
+        [drink('h4', 'Raspberry Espresso Tonic', ['raspberry', 'espresso', 'tonic']), 296, 'highball'],
+        [drink('h5', 'Maple Latte', ['maple', 'espresso', 'milk'], { is_hot: 1 }), 362, 'togo'],
+      ];
+      const cups = lineup.map(([d, x, vessel]) => DrinkArt.vessel(d, { x, ground, scale: 0.85, vessel })).join('');
+      const badges = [['maple', 30, 36, -8], ['pumpkin', 108, 26, 6], ['cardamom', 186, 40, -4], ['apple', 264, 24, 8], ['cinnamon', 344, 34, -6]]
+        .map(([id, x, y, r]) => DrinkArt.badge(id, x, y, r, 15)).join('');
+      return `<svg viewBox="0 0 ${W} 190" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet" role="img" aria-label="Illustration of seasonal drinks">
+        ${cups}${badges}</svg>`;
+    }
+    document.getElementById('heroArt').innerHTML = heroArtSVG();
+
+    // ------------------------------------------------------------ detail sheet
+    function openDrinkModalById(id) {
+      const d = allDrinks.find(item => item.id === id);
+      if (d) openDrinkModal(d);
+    }
+
+    function openDrinkModal(d) {
+      activeModalDrink = d;
+      const img = document.getElementById('modalImg');
+      const ph = document.getElementById('modalPlaceholder');
+      const media = document.getElementById('modalMedia');
+      if (hasDrinkImage(d)) {
+        img.src = d.image_url;
+        img.alt = d.drink_name;
+        img.classList.remove('hidden');
+        ph.className = 'hidden';
+        media.className = 'relative mx-auto mb-4 w-fit max-w-full';
+      } else {
+        img.removeAttribute('src');
+        img.classList.add('hidden');
+        media.className = 'relative mx-auto mb-4 w-full';
+        ph.className = 'relative w-full rounded-2xl border-2 border-charcoal-900 overflow-hidden shadow-pop-sm';
+        ph.style.aspectRatio = '16 / 9';
+        ph.innerHTML = renderTileHTML(d, 16 / 9);
+      }
+
+      document.getElementById('modalTitle').textContent = d.drink_name;
+      document.getElementById('modalCafe').textContent = `${d.cafe_name} · ${d.neighborhood || 'Twin Cities'}`;
+      document.getElementById('modalDesc').textContent = d.description || 'Seasonal drop from this cafe.';
+
+      const priceBadge = document.getElementById('modalPriceBadge');
+      priceBadge.textContent = d.price || '';
+      priceBadge.classList.toggle('hidden', !d.price);
+
+      const captionBlock = document.getElementById('modalCaptionBlock');
+      const caption = (d.source_caption || '').trim();
+      if (caption && d.source_type === 'instagram') {
+        document.getElementById('modalCaption').textContent = caption;
+        document.getElementById('modalCaptionLabel').textContent = 'From the original post';
+        captionBlock.open = false;
+        captionBlock.classList.remove('hidden');
+      } else if (caption) {
+        document.getElementById('modalCaption').textContent = caption;
+        document.getElementById('modalCaptionLabel').textContent = 'From the cafe menu';
+        captionBlock.open = false;
+        captionBlock.classList.remove('hidden');
+      } else {
+        captionBlock.classList.add('hidden');
+      }
+
+      const flavors = flavorsOf(d);
+      const badge = (cls, text) => `<span class="px-2 py-0.5 rounded-md text-[10px] font-display font-bold border ${cls}">${text}</span>`;
+      document.getElementById('modalTagBadges').innerHTML = [
+        DropRecency.sourceDate(d) ? `<span class="px-2 py-0.5 rounded-md bg-charcoal-900 text-white text-[10px] font-mono font-bold">📅 ${esc(formatDropDate(DropRecency.sourceDate(d)))}</span>` : '',
+        d.status === 'last_call' ? badge('bg-coral-500 text-white border-charcoal-900', `⌛ LAST CALL ${esc(formatDropDate(d.ending_at).toUpperCase())}`) : '',
+        hasDrinkImage(d) ? badge('bg-emerald-100 text-emerald-800 border-charcoal-900', '📸 REAL PHOTO') : badge('bg-oat-200 text-charcoal-800 border-charcoal-900/30 font-mono font-normal', 'NO PHOTO YET · DRAWN'),
+        d.is_iced ? badge('bg-sky-100 text-sky-900 border-charcoal-900', '🧊 ICED') : '',
+        d.is_hot ? badge('bg-rose-100 text-rose-900 border-charcoal-900', '☕ HOT') : '',
+        ...flavors.slice(0, 4).map(f => badge('bg-oat-200 border-charcoal-900', `#${esc(f)}`)),
+      ].join('');
+
+      document.getElementById('modalMapBtn').classList.toggle('hidden', !(d.lat && d.lon));
+
+      const sourceBtn = document.getElementById('modalSourceBtn');
+      if (d.source_url && /^https?:\/\//.test(d.source_url)) {
+        sourceBtn.classList.remove('hidden');
+        sourceBtn.href = d.source_url;
+        sourceBtn.textContent = d.source_url.includes('instagram.com') ? '📸 View original post' : '🌐 View cafe menu';
+      } else {
+        sourceBtn.classList.add('hidden');
+      }
+
+      updateModalFavButton();
+      const modal = document.getElementById('detailModal');
+      const sheet = document.getElementById('detailSheet');
+      sheet.querySelector('.overflow-y-auto').scrollTop = 0;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      requestAnimationFrame(() => { modal.classList.remove('opacity-0'); sheet.classList.remove('translate-y-full'); });
+    }
+
+    function updateModalFavButton(animate = false) {
+      if (!activeModalDrink) return;
+      setFavButton(document.getElementById('modalFavBtn'), favorites.has(activeModalDrink.id), animate);
+    }
+    function toggleCurrentModalFavorite() { if (activeModalDrink) toggleFavorite(activeModalDrink.id); }
+    function closeDetailSheet() {
+      const modal = document.getElementById('detailModal');
+      document.getElementById('detailSheet').classList.add('translate-y-full');
+      modal.classList.add('opacity-0');
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 250);
+    }
+    function closeDetailModal(e) { if (e.target.id === 'detailModal') closeDetailSheet(); }
+    function openActiveCafeOnMap() {
+      if (!activeModalDrink) return;
+      const id = activeModalDrink.cafe_id;
+      closeDetailSheet();
+      switchTab('map');
+      focusCafe(id);
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (closeDropdowns()) return;
+      if (!document.getElementById('detailModal').classList.contains('hidden')) closeDetailSheet();
+      else if (currentTab === 'map') closeCafePanel();
+    });
+
+    // ------------------------------------------------------------ search
+    // ------------------------------------------------------------ dropdowns
+    const TYPE_OPTIONS = [
+      { value: 'all', label: 'Any drink' },
+      { value: 'matcha', label: '🍵 Matcha' },
+      { value: 'iced', label: '🧊 Iced' },
+      { value: 'hot', label: '☕ Hot' },
+    ];
+    let neighborhoodOptions = [{ value: 'All', label: 'All neighborhoods' }];
+    const DD_HANDLERS = { neighborhoodDD: v => setSearchNeighborhood(v), typeDD: v => setSearchType(v) };
+
+    function renderDropdown(id, options, value, isSet) {
+      const el = document.getElementById(id);
+      const current = options.find(o => o.value === value) || options[0];
+      const open = el.dataset.open === '1';
+      el.innerHTML = `
+        <button type="button" class="filter-select ${isSet ? 'is-set' : ''}" aria-haspopup="listbox" aria-expanded="${open}"
+          onclick="toggleDropdown('${id}')">${esc(current.label)}</button>
+        <div class="dd-menu ${open ? '' : 'hidden'}" role="listbox">
+          ${options.map(o => `
+            <button type="button" role="option" class="dd-option" aria-selected="${o.value === value}"
+              onclick="pickDropdown('${id}', decodeURIComponent('${encodeURIComponent(o.value)}'))">
+              <span>${esc(o.label)}</span>${o.count != null ? `<span class="dd-count">${o.count}</span>` : ''}
+            </button>`).join('')}
+        </div>`;
+    }
+    function toggleDropdown(id) {
+      const el = document.getElementById(id);
+      const opening = el.dataset.open !== '1';
+      closeDropdowns();
+      if (!opening) return;
+      el.dataset.open = '1';
+      el.querySelector('.filter-select').setAttribute('aria-expanded', 'true');
+      const menu = el.querySelector('.dd-menu');
+      menu.classList.remove('hidden');
+      const sel = menu.querySelector('[aria-selected="true"]');
+      if (sel) { menu.scrollTop = sel.offsetTop - menu.clientHeight / 2 + sel.offsetHeight / 2; sel.focus({ preventScroll: true }); }
+      // Opens downward; scroll the page if the menu would run under the bottom nav.
+      menu.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    function closeDropdowns() {
+      let closed = false;
+      document.querySelectorAll('.dd[data-open="1"]').forEach(el => {
+        delete el.dataset.open;
+        el.querySelector('.dd-menu').classList.add('hidden');
+        el.querySelector('.filter-select').setAttribute('aria-expanded', 'false');
+        closed = true;
+      });
+      return closed;
+    }
+    function pickDropdown(id, value) {
+      closeDropdowns();
+      DD_HANDLERS[id](value);
+      document.querySelector(`#${id} .filter-select`).focus({ preventScroll: true });
+    }
+    document.addEventListener('click', e => { if (!e.target.closest('.dd')) closeDropdowns(); });
+    document.addEventListener('keydown', e => {
+      const menu = e.target.closest && e.target.closest('.dd-menu');
+      if (!menu || !['ArrowDown', 'ArrowUp'].includes(e.key)) return;
+      e.preventDefault();
+      const opts = [...menu.querySelectorAll('.dd-option')];
+      const i = opts.indexOf(e.target) + (e.key === 'ArrowDown' ? 1 : -1);
+      opts[Math.max(0, Math.min(opts.length - 1, i))].focus();
+    });
+
+    function buildNeighborhoodSelect() {
+      const counts = new Map();
+      allDrinks.forEach(d => {
+        const nh = d.neighborhood || 'Twin Cities';
+        counts.set(nh, (counts.get(nh) || 0) + 1);
+      });
+      const zones = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a) || a.localeCompare(b));
+      neighborhoodOptions = [{ value: 'All', label: 'All neighborhoods', count: allDrinks.length },
+        ...zones.map(z => ({ value: z, label: z, count: counts.get(z) }))];
+      syncFilters();
+    }
+
+    function setSearchNeighborhood(zone) { searchNeighborhood = zone; syncFilters(); runSearch(); }
+    function setSearchType(type) { searchType = type; syncFilters(); runSearch(); }
+    function togglePhotosSearchFilter() { searchPhotosOnly = !searchPhotosOnly; syncFilters(); runSearch(); }
+    function syncFilters() {
+      renderDropdown('neighborhoodDD', neighborhoodOptions, searchNeighborhood, searchNeighborhood !== 'All');
+      renderDropdown('typeDD', TYPE_OPTIONS, searchType, searchType !== 'all');
+      const photos = document.getElementById('filterPhotosToggle');
+      photos.classList.toggle('bg-emerald-300', searchPhotosOnly);
+      photos.classList.toggle('bg-white', !searchPhotosOnly);
+      photos.setAttribute('aria-pressed', searchPhotosOnly);
+    }
+
+    function resetSearchFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      searchNeighborhood = 'All';
+      searchPhotosOnly = false;
+      searchType = 'all';
+      syncFilters();
+      setDropRecency(30);
+    }
+    function onSearchChange() {
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !document.getElementById('searchInput').value.trim());
+      runSearch();
+    }
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      runSearch();
+    }
+
+    function runSearch() {
+      const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const filtered = allDrinks.filter(d => {
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:04:55.784Z'))) return false;
+        if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
+        if (searchPhotosOnly && !hasDrinkImage(d)) return false;
+        if (searchType === 'matcha' && !isMatcha(d)) return false;
+        if (searchType === 'iced' && d.is_iced !== 1) return false;
+        if (searchType === 'hot' && d.is_hot !== 1) return false;
+        if (terms.length) {
+          const corpus = [d.drink_name, d.cafe_name, d.neighborhood, d.city, d.description, ...flavorsOf(d)].join(' ').toLowerCase();
+          if (!terms.every(t => corpus.includes(t))) return false;
+        }
+        return true;
+      });
+      // Any change to the query or filters starts back at page 1.
+      const filterKey = [terms.join(' '), searchNeighborhood, searchType, searchPhotosOnly, dropRecencyDays].join('|');
+      if (filterKey !== lastFilterKey) { searchPage = 1; lastFilterKey = filterKey; }
+      lastFilteredCount = filtered.length;
+      const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      searchPage = Math.min(searchPage, pages);
+      const start = (searchPage - 1) * PAGE_SIZE;
+      const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+      const where = searchNeighborhood === 'All' ? 'All neighborhoods' : searchNeighborhood;
+      const range = filtered.length > PAGE_SIZE ? `${start + 1}–${start + pageItems.length} of ${filtered.length}` : `${filtered.length}`;
+      document.getElementById('searchResultsCount').innerHTML =
+        `Showing ${range} drops · <span class="text-coral-600">${esc(where)}</span> · newest first`;
+      document.getElementById('searchEmptyState').classList.toggle('hidden', filtered.length > 0);
+      renderGrid(document.getElementById('searchResultsGrid'), pageItems);
+      renderPager(pages);
+    }
+
+    // Page numbers with ellipses: 1 … 4 5 6 … 12
+    function pageList(pages, cur) {
+      const keep = new Set([1, pages, cur - 1, cur, cur + 1]);
+      const out = [];
+      for (let i = 1; i <= pages; i++) {
+        // An ellipsis never stands in for a single page.
+        if (keep.has(i) || (keep.has(i - 1) && keep.has(i + 1))) out.push(i);
+        else if (out[out.length - 1] !== '…') out.push('…');
+      }
+      return out;
+    }
+    function renderPager(pages) {
+      const nav = document.getElementById('searchPager');
+      nav.classList.toggle('hidden', pages <= 1);
+      if (pages <= 1) { nav.innerHTML = ''; return; }
+      const base = 'neo-btn h-9 min-w-9 px-3 rounded-xl font-display font-bold text-xs flex items-center justify-center';
+      const arrow = (to, label, text) => to < 1 || to > pages
+        ? `<span class="h-9 px-3 rounded-xl border-2 border-charcoal-900/20 text-charcoal-700/40 font-display font-bold text-xs flex items-center" aria-hidden="true">${text}</span>`
+        : `<button onclick="goToPage(${to})" aria-label="${label}" class="${base} bg-white">${text}</button>`;
+      nav.innerHTML = arrow(searchPage - 1, 'Previous page', '‹ Prev') +
+        pageList(pages, searchPage).map(n => n === '…'
+          ? '<span class="px-1 text-xs font-display font-bold text-charcoal-700">…</span>'
+          : `<button onclick="goToPage(${n})" ${n === searchPage ? 'aria-current="page"' : ''}
+               class="${base} ${n === searchPage ? 'bg-charcoal-900 text-white' : 'bg-white'}">${n}</button>`).join('') +
+        arrow(searchPage + 1, 'Next page', 'Next ›');
+    }
+    function goToPage(n) {
+      searchPage = n;
+      runSearch();
+      // Back to the top of the results, below the sticky header.
+      const top = document.getElementById('searchResultsCount').getBoundingClientRect().top + scrollY
+        - document.getElementById('appHeader').offsetHeight - 12;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+
+    function renderFavorites() {
+      const favDrinks = allDrinks.filter(d => favorites.has(d.id));
+      document.getElementById('favoritesEmptyState').classList.toggle('hidden', favDrinks.length > 0);
+      renderGrid(document.getElementById('favoritesGrid'), favDrinks);
+    }
+
+    // ------------------------------------------------------------ cafes directory
+    function onCafeSearchChange() {
+      const q = (document.getElementById('cafeSearchInput').value || '').toLowerCase().trim();
+      renderCafesList(allCafes.filter(c => !q ||
+        [c.name, c.neighborhood, c.address, c.city].some(v => (v || '').toLowerCase().includes(q))));
+    }
+
+    function renderCafesList(cafes) {
+      const container = document.getElementById('cafesListContainer');
+      if (!cafes.length) {
+        container.innerHTML = '<div class="text-center py-8 text-xs font-display text-charcoal-700">No cafes found.</div>';
+        return;
+      }
+      const sorted = [...cafes].sort((a, b) =>
+        (drinksByBrand.get(brandKey(b)) || []).length - (drinksByBrand.get(brandKey(a)) || []).length || a.name.localeCompare(b.name));
+      container.innerHTML = sorted.map(c => {
+        const n = (drinksByBrand.get(brandKey(c)) || []).length;
+        const ig = (c.instagram || '').replace(/^@/, '');
+        return `
+          <div class="neo-card bg-white rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <h4 class="font-display font-bold text-sm truncate">${esc(c.name)}</h4>
+                ${n ? `<span class="shrink-0 px-1.5 py-0.5 rounded-full bg-coral-100 text-coral-600 text-[10px] font-display font-bold border border-charcoal-900">${n} drop${n > 1 ? 's' : ''}</span>` : ''}
+              </div>
+              <p class="text-xs text-charcoal-700 truncate mt-0.5">📍 ${esc(c.neighborhood || c.city || 'Twin Cities')}${c.address ? ' · ' + esc(c.address) : ''}</p>
+              ${ig ? `<a href="https://instagram.com/${encodeURIComponent(ig)}" target="_blank" rel="noopener" class="inline-block text-[11px] font-display font-bold text-coral-600 mt-1 hover:underline">@${esc(ig)}</a>` : ''}
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              ${c.website ? `<a href="${esc(c.website)}" target="_blank" rel="noopener" class="neo-btn px-2.5 py-1.5 rounded-xl bg-white font-display font-bold text-[11px]">Web ↗</a>` : ''}
+              ${c.lat ? `<button onclick="switchTab('map'); focusCafe('${esc(c.id)}')" class="neo-btn px-2.5 py-1.5 rounded-xl bg-butter-200 font-display font-bold text-[11px]">Map</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ------------------------------------------------------------ map
+    let map = null, markersLayer = null, mapFilter = 'drops', mapQuery = '';
+    let selectedCafeId = null;
+    const markersByCafe = new Map();
+    let leafletLoading = null;
+    const mapLayoutObserver = new ResizeObserver(() => {
+      if (currentTab !== 'map') return;
+      document.documentElement.style.setProperty('--header-h', document.getElementById('appHeader').offsetHeight + 'px');
+      document.documentElement.style.setProperty('--map-toolbar-h', document.getElementById('mapToolbar').offsetHeight + 'px');
+      if (map) map.invalidateSize();
+    });
+    mapLayoutObserver.observe(document.getElementById('mapToolbar'));
+    mapLayoutObserver.observe(document.getElementById('appHeader'));
+
+    // Basemap: OpenFreeMap vector tiles (free, no API key) drawn by MapLibre
+    // inside Leaflet, so markers and panning stay plain Leaflet.
+    const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+    function loadAsset(tag, attrs) {
+      return new Promise((resolve, reject) => {
+        const el = Object.assign(document.createElement(tag), attrs, { onload: resolve, onerror: reject });
+        document.head.appendChild(el);
+      });
+    }
+    function loadLeaflet() {
+      if (window.L && L.maplibreGL) return Promise.resolve();
+      if (leafletLoading) return leafletLoading;
+      const cdn = 'https://cdn.jsdelivr.net/npm/';
+      loadAsset('link', { rel: 'stylesheet', href: cdn + 'leaflet@1.9.4/dist/leaflet.css' });
+      loadAsset('link', { rel: 'stylesheet', href: cdn + 'maplibre-gl@4.7.1/dist/maplibre-gl.css' });
+      leafletLoading = Promise.all([
+        loadAsset('script', { src: cdn + 'leaflet@1.9.4/dist/leaflet.js' }),
+        loadAsset('script', { src: cdn + 'maplibre-gl@4.7.1/dist/maplibre-gl.js' }),
+      ]).then(() => loadAsset('script', { src: cdn + '@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js' }));
+      return leafletLoading;
+    }
+
+    async function ensureMap() {
+      // Keep the map exactly under the header even if the header wraps.
+      document.documentElement.style.setProperty('--header-h', document.getElementById('appHeader').offsetHeight + 'px');
+      await loadLeaflet();
+      if (!map) {
+        map = L.map('mapCanvas', { center: [44.9601, -93.2166], zoom: 12, zoomControl: false, attributionControl: true });
+        L.maplibreGL({
+          style: MAP_STYLE,
+          attribution: '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+        }).addTo(map);
+        L.control.zoom({ position: 'topright' }).addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+        map.on('click', closeCafePanel);
+        syncMapFilterButtons();
+        updateMapMarkers();
+      }
+      setTimeout(() => map.invalidateSize(), 50);
+    }
+
+    function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:04:55.784Z'))); }
+
+    function cafeMatchesMap(c) {
+      const drops = mapCafeDrops(c);
+      if (mapFilter === 'drops' && !drops.length) return false;
+      if (mapFilter === 'matcha' && !drops.some(isMatcha)) return false;
+      if (mapQuery) {
+        const hay = [c.name, c.city, c.neighborhood, ...drops.map(d => `${d.drink_name} ${d.description || ''}`)].join(' ').toLowerCase();
+        if (!hay.includes(mapQuery)) return false;
+      }
+      return true;
+    }
+
+    function pinHTML(drops) {
+      if (!drops.length) {
+        return '<div class="relative w-4 h-4 rounded-full bg-white border-2 border-charcoal-900"></div>';
+      }
+      const matcha = drops.some(isMatcha);
+      return `<div class="relative w-8 h-8 rounded-full ${matcha ? 'bg-matcha-400' : 'bg-coral-400'} border-2 border-charcoal-900 shadow-pop-sm flex items-center justify-center text-sm">
+                ${matcha ? '🍵' : '✨'}
+                <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-charcoal-900 text-white text-[10px] font-display font-bold flex items-center justify-center">${drops.length}</span>
+              </div>`;
+    }
+
+    function updateMapMarkers() {
+      if (!markersLayer) return;
+      markersLayer.clearLayers();
+      markersByCafe.clear();
+      let shown = 0;
+      allCafes.forEach(c => {
+        if (!c.lat || !c.lon || !cafeMatchesMap(c)) return;
+        shown++;
+        const drops = mapCafeDrops(c);
+        const size = drops.length ? 32 : 16;
+        const marker = L.marker([c.lat, c.lon], {
+          icon: L.divIcon({ className: 'cafe-pin', html: pinHTML(drops), iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
+          zIndexOffset: drops.length ? 500 : 0,
+          title: c.name,
+          keyboard: true,
+        });
+        marker.on('click', e => { L.DomEvent.stopPropagation(e); openCafePanel(c.id); centerOnCafe(c); });
+        markersLayer.addLayer(marker);
+        markersByCafe.set(c.id, marker);
+      });
+      markSelectedPin();
+      document.getElementById('mapSpotCount').textContent = `${shown} spot${shown === 1 ? '' : 's'}`;
+      document.getElementById('mapEmptyState').classList.toggle('hidden', shown > 0);
+      if (selectedCafeId) {
+        const selected = cafesById.get(selectedCafeId);
+        if (!selected || !cafeMatchesMap(selected)) closeCafePanel();
+        else openCafePanel(selectedCafeId);
+      }
+    }
+
+    function setMapFilter(f) {
+      mapFilter = f;
+      syncMapFilterButtons();
+      updateMapMarkers();
+    }
+    // Each filter wears its own colour when selected; the rest stay white.
+    const MAP_FILTER_COLORS = { drops: 'bg-butter-300', matcha: 'bg-matcha-200', all: 'bg-sky-200' };
+    function syncMapFilterButtons() {
+      document.querySelectorAll('.map-filter').forEach(b => {
+        const on = b.dataset.mapFilter === mapFilter;
+        b.classList.toggle(MAP_FILTER_COLORS[b.dataset.mapFilter], on);
+        b.classList.toggle('bg-white', !on);
+        b.setAttribute('aria-pressed', on);
+      });
+    }
+    function onMapSearchInput() {
+      mapQuery = document.getElementById('mapSearchInput').value.toLowerCase().trim();
+      if (mapQuery && mapFilter !== 'all') { mapFilter = 'all'; syncMapFilterButtons(); }
+      updateMapMarkers();
+    }
+
+    // Highlight the pin whose cafe panel is open, and lift it above its neighbours.
+    function markSelectedPin() {
+      markersByCafe.forEach((m, id) => {
+        const on = id === selectedCafeId;
+        const el = m.getElement();
+        if (el) el.classList.toggle('is-selected', on);
+        m.setZIndexOffset(on ? 3000 : (mapCafeDrops(cafesById.get(id)).length ? 500 : 0));
+      });
+    }
+
+    function openCafePanel(cafeId) {
+      const c = cafesById.get(cafeId);
+      if (!c) return;
+      selectedCafeId = cafeId;
+      markSelectedPin();
+      const drops = mapCafeDrops(c);
+      const ig = (c.instagram || '').replace(/^@/, '');
+      const link = (href, label, bg) => `<a href="${esc(href)}" target="_blank" rel="noopener" class="neo-btn px-2.5 py-1.5 rounded-lg ${bg} text-[11px] font-display font-bold whitespace-nowrap">${label}</a>`;
+
+      document.getElementById('cafePanelBody').innerHTML = `
+        <div class="sticky top-0 z-10 bg-oat-50/95 backdrop-blur px-4 pt-3 pb-3 border-b-2 border-charcoal-900/10">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="font-title font-normal text-lg leading-tight">${esc(c.name)}</h3>
+              <p class="text-xs text-charcoal-700 mt-0.5">${esc(c.neighborhood || c.city || 'Twin Cities')}${c.address ? ' · ' + esc(c.address) : ''}</p>
+            </div>
+            <button onclick="closeCafePanel()" aria-label="Close" class="shrink-0 w-8 h-8 rounded-lg border-2 border-charcoal-900 bg-coral-400 flex items-center justify-center text-xs font-bold shadow-pop-sm">✕</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-3 pr-1 pb-1">
+            ${ig ? link(`https://instagram.com/${encodeURIComponent(ig)}`, `@${esc(ig)}`, 'bg-butter-100') : ''}
+            ${c.website ? link(c.website, 'Website ↗', 'bg-sky-100') : ''}
+          </div>
+        </div>
+        <div class="p-3 space-y-2">
+          ${drops.length ? `<p class="px-1 text-[10px] font-display font-bold uppercase tracking-wider text-charcoal-700">${drops.length} seasonal drop${drops.length > 1 ? 's' : ''}</p>` : ''}
+          ${drops.map(d => `
+            <button onclick="openDrinkModalById(${d.id})" class="neo-btn w-full text-left flex items-stretch gap-3 p-2 rounded-xl bg-white hover:bg-butter-200 transition">
+              <div class="relative shrink-0 self-start w-14 rounded-lg overflow-hidden border border-charcoal-900/30 bg-oat-100" style="aspect-ratio:${hasDrinkImage(d) ? photoRatio(d).toFixed(3) : '2 / 3'}; max-height: 84px">
+                ${hasDrinkImage(d)
+                  ? `<img src="${esc(d.image_url)}" alt="" loading="lazy" class="absolute inset-0 w-full h-full object-cover">`
+                  : renderTileHTML(d, 2 / 3)}
+              </div>
+              <div class="min-w-0 py-0.5">
+                <p class="font-title font-normal text-sm leading-snug">${esc(d.drink_name)}</p>
+                ${d.description ? `<p class="text-[11px] text-charcoal-700 leading-snug line-clamp-2 mt-0.5">${esc(d.description)}</p>` : ''}
+                ${DropRecency.sourceDate(d) ? `<p class="text-[10px] font-mono text-charcoal-700/80 mt-1">${esc(formatDropDate(DropRecency.sourceDate(d)))}${d.price ? ' · ' + esc(d.price) : ''}</p>` : ''}
+              </div>
+            </button>`).join('') ||
+            `<p class="px-1 py-2 text-xs text-charcoal-700 italic">${dropRecencyDays < 30 ? 'No posts or drops in this date range. Widen the slider to see older listings.' : 'No seasonal drops tracked here yet.'}</p>`}
+        </div>`;
+      const panel = document.getElementById('cafePanel');
+      panel.classList.remove('is-hidden');
+      document.getElementById('cafePanelBody').scrollTop = 0;
+    }
+
+    function closeCafePanel() {
+      document.getElementById('cafePanel').classList.add('is-hidden');
+      selectedCafeId = null;
+      markSelectedPin();
+    }
+
+    async function focusCafe(cafeId) {
+      await ensureMap();
+      const c = cafesById.get(cafeId) || allCafes.find(x => x.name.toLowerCase().includes(String(cafeId).toLowerCase()));
+      if (!c || !c.lat) return;
+      if (!cafeMatchesMap(c)) { mapFilter = 'all'; mapQuery = ''; document.getElementById('mapSearchInput').value = ''; syncMapFilterButtons(); updateMapMarkers(); }
+      openCafePanel(c.id);
+      centerOnCafe(c, Math.max(map.getZoom(), 15));
+    }
+
+    // Puts the cafe's pin in the middle of the part of the map you can see:
+    // beside the cafe panel on desktop, between the toolbar and the panel on phones.
+    // Call after openCafePanel so the panel's size is known.
+    function centerOnCafe(c, zoom = map.getZoom()) {
+      const size = map.getSize();
+      const panel = document.getElementById('cafePanel');
+      let left = 0, right = size.x, top = 0, bottom = size.y;
+      if (window.innerWidth >= 768) {
+        left = panel.offsetLeft + panel.offsetWidth;
+      } else {
+        const bar = document.getElementById('mapToolbar');
+        top = bar.offsetTop + bar.offsetHeight;
+        bottom = panel.offsetTop;
+      }
+      const offset = L.point((left + right) / 2 - size.x / 2, (top + bottom) / 2 - size.y / 2);
+      const center = map.unproject(map.project([c.lat, c.lon], zoom).subtract(offset), zoom);
+      if (zoom !== map.getZoom()) map.flyTo(center, zoom, { duration: 0.8 });
+      else map.panTo(center, { animate: true, duration: 0.45 });
+    }
+
+    init();
+  </script>
+</body>
+</html>

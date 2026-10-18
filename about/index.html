@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Seasonal coffee and matcha from independent Twin Cities cafes. How Coffee Radar gathers menus, credits sources, and handles corrections.">
+  <title>About · Coffee Radar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=Dela+Gothic+One&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Space Grotesk"', 'sans-serif'],
+            title: ['"Dela Gothic One"', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            butter: { 100: '#FFFBEA', 200: '#FFF3C4' },
+            oat: { 50: '#FAF7F2', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4' },
+            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#FF6B57', 600: '#E05340' },
+            matcha: { 100: '#DCFCE7', 200: '#BBF7D0', 400: '#4ADE80', 800: '#166534' },
+            charcoal: { 900: '#1C1917', 800: '#292524', 700: '#44403C' }
+          },
+          boxShadow: { 'pop': '4px 4px 0px #1C1917', 'pop-sm': '2px 2px 0px #1C1917' }
+        }
+      }
+    }
+  </script>
+  <style>
+    [hidden] { display: none !important; }
+    button, select { cursor: pointer; }
+    .page-tab[aria-current="page"] { background: #FFF3C4; }
+    body { background-color: #FAF7F2; color: #1C1917; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .neo-card { border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; }
+    .neo-btn { border: 2px solid #1C1917; box-shadow: 3px 3px 0px #1C1917; transition: transform .1s ease, box-shadow .1s ease; }
+    .neo-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #1C1917; }
+    .neo-btn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+    .tab[aria-selected="true"] { background: #1C1917; color: #fff; }
+    .tab:focus-visible, .neo-btn:focus-visible, a:focus-visible { outline: 2px solid #FF6B57; outline-offset: 2px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px;
+      border: 1.5px solid #1C1917; background: #fff; font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: 11px; line-height: 16px; white-space: nowrap;
+    }
+    a.chip:hover, button.chip:hover { background: #FFFBEA; }
+    button.chip[aria-expanded="true"] { background: #1C1917; color: #fff; }
+    .chip-quiet { border-color: transparent; background: #F5EFEB; color: #44403C; font-weight: 600; }
+    .meter { width: 56px; height: 6px; border-radius: 9999px; background: #EBDCD0; overflow: hidden; }
+    .meter > span { display: block; height: 100%; border-radius: 9999px; }
+    #list { scroll-margin-top: 80px; }
+    #toast { transition: opacity .2s ease, transform .2s ease; }
+    #toast.is-hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+  </style>
+<meta name="robots" content="noindex,nofollow">
+</head>
+
+<body class="min-h-screen">
+  <header class="border-b-2 border-charcoal-900 bg-oat-50">
+    <div class="max-w-4xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
+      <a href="/coffee-radar-preview/" class="font-title text-lg">coffee radar<span class="text-coral-500">.</span></a>
+      <a href="/coffee-radar-preview/" class="neo-btn bg-butter-200 rounded-xl px-3 py-2 text-xs font-bold">Find a drink ↗</a>
+    </div>
+  </header>
+  <main class="max-w-4xl mx-auto px-5 py-8 sm:py-12"><p class="text-[11px] text-charcoal-700 py-2">Preview · Oct 17, 2026 snapshot · data stays fixed until the next update.</p>
+    <section class="neo-card rounded-3xl overflow-hidden bg-butter-200">
+      <div class="p-6 sm:p-10">
+        <p class="text-xs uppercase tracking-widest font-bold">Made for the next coffee run</p>
+        <h1 class="font-title text-3xl sm:text-5xl leading-tight mt-4 max-w-xl">Good drinks.<br>Around the corner.</h1>
+        <p class="text-sm sm:text-base leading-relaxed mt-5 max-w-xl">A little radar for seasonal coffee, specialty matcha, and the independent cafes making something worth leaving the house for. Starting in Minneapolis, St. Paul, and the surrounding metro.</p>
+      </div>
+      <div class="border-t-2 border-charcoal-900 bg-coral-100 px-6 sm:px-10 py-4 text-xs font-bold">An independent project, still taking shape. Coffee Radar is our working name.</div>
+    </section>
+    <div class="grid sm:grid-cols-2 gap-5 mt-8">
+      <section class="neo-card rounded-2xl bg-white p-6">
+        <p class="font-display text-xs font-bold text-coral-600">01 / THE SOURCES</p>
+        <h2 class="font-title text-lg mt-3">From the cafe itself.</h2>
+        <p class="text-sm leading-relaxed mt-3">We gather drink announcements from public Instagram posts and cafe menu pages. Automated tools help turn those posts into searchable listings. Open a drink to see its source and, when available, the original caption.</p>
+        <p class="text-sm leading-relaxed mt-3">Prices appear only when a source states them. Drink photos come from cafe posts or menus; illustrated cards are labeled as drawings.</p>
+      </section>
+      <section class="neo-card rounded-2xl bg-white p-6">
+        <p class="font-display text-xs font-bold text-coral-600">02 / THE FINE PRINT</p>
+        <h2 class="font-title text-lg mt-3">Menus move fast.</h2>
+        <p class="text-sm leading-relaxed mt-3">A listing means we found a mention, not that we have checked today's stock. Cafes sell out, change recipes, and wrap up seasonal menus. Check with the cafe before a special trip, especially for ingredients or dietary needs.</p>
+        <p class="text-sm leading-relaxed mt-3">We hide older listings and track last-call announcements. Human reviews help fill the gaps when a post doesn't tell the whole story.</p>
+      </section>
+    </div>
+    <section id="corrections" class="neo-card bg-white rounded-2xl p-6 mt-8"><h2 class="font-title text-xl">A preview, for now.</h2><p class="text-sm leading-relaxed mt-3">This is a browsable snapshot captured Oct 17, 2026. Menus may have changed since then. Check the linked cafe sources before visiting. Correction requests are not collected on this preview.</p></section>
+    <footer class="flex flex-wrap justify-between gap-4 py-8 text-xs text-charcoal-700"><p>Built around independent Twin Cities cafes.</p><a href="/coffee-radar-preview/" class="underline">Back to the drinks</a></footer>
+  </main>
+  
+</body>
+</html>
