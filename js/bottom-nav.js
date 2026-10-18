@@ -1,11 +1,11 @@
-// Direction-aware navigation for the page and the scrollable map cafe panel.
+// Direction-aware page navigation; Map keeps it pinned while browsing cafes.
 (() => {
   const dock = document.getElementById('navDock');
   const nav = document.getElementById('bottomNav');
   const reveal = document.getElementById('navReveal');
   const page = document.scrollingElement;
-  const cafePanel = document.getElementById('cafePanelBody');
   const positions = new Map();
+  let pinned = false;
 
   function show(visible) {
     dock.classList.toggle('nav-is-collapsed', !visible);
@@ -18,15 +18,14 @@
 
   function reset() {
     positions.clear();
-    for (const el of [page, cafePanel]) {
-      positions.set(el, { y: Math.max(0, el.scrollTop), direction: 0, distance: 0 });
-    }
+    positions.set(page, { y: Math.max(0, page.scrollTop), direction: 0, distance: 0 });
     show(true);
   }
 
   document.addEventListener('scroll', event => {
+    if (pinned) return;
     const el = event.target === document ? page : event.target;
-    if (el !== page && el !== cafePanel) return;
+    if (el !== page) return;
     // Scrolling inside a drink dialog shouldn't change the navigation behind it.
     if (!document.getElementById('detailModal').classList.contains('hidden')) return;
     const y = Math.max(0, Math.min(el.scrollTop, el.scrollHeight - el.clientHeight));
@@ -48,6 +47,6 @@
   window.addEventListener('resize', () => {
     if (window.innerWidth !== width) { width = window.innerWidth; reset(); }
   }, { passive: true });
-  window.BottomNav = { reset };
+  window.BottomNav = { reset, setPinned(value) { pinned = Boolean(value); reset(); } };
   reset();
 })();

@@ -106,14 +106,20 @@
     /* Cafe panel over the map: bottom sheet on phones, side card on desktop. */
     #cafePanel {
       position: absolute; z-index: 500;
-      left: 12px; right: 12px; bottom: 92px;
+      left: 12px; right: 12px; bottom: var(--map-nav-clearance, 108px);
       max-height: min(58vh, calc(100% - var(--map-toolbar-h, 170px) - 120px));
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+      transition: transform .24s ease, opacity .18s ease, visibility 0s;
     }
     @media (min-width: 768px) {
-      #cafePanel { left: 16px; right: auto; top: calc(var(--map-toolbar-h, 170px) + 24px); bottom: 96px; width: 380px; max-height: none; }
+      #cafePanel { left: 16px; right: auto; top: calc(var(--map-toolbar-h, 170px) + 24px); bottom: var(--map-nav-clearance, 108px); width: 380px; max-height: none; }
     }
-    #cafePanel.is-hidden { transform: translateY(24px); opacity: 0; pointer-events: none; }
+    #cafePanel.is-hidden { transform: translateY(24px); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .24s ease, opacity .18s ease, visibility 0s .24s; }
+    #mapToolbar { transition: transform .24s ease, opacity .18s ease, visibility 0s; }
+    @media (max-width: 767px) {
+      #cafePanel { top: 12px; bottom: var(--map-nav-clearance, 108px); max-height: none; }
+      #cafePanel.is-hidden { transform: translateY(calc(100% + 112px)); }
+      .cafe-panel-open #mapToolbar { transform: translateY(calc(-100% - 24px)); opacity: 0; visibility: hidden; transition: transform .24s ease, opacity .18s ease, visibility 0s .24s; }
+    }
 
     /* Save button: outline heart when off, solid white heart on coral when on. */
     .fav-btn { background: #fff; color: #1C1917; transition: background-color .15s ease, color .15s ease, transform .1s ease; }
@@ -295,7 +301,7 @@
     </div>
 
     <!-- Cafe panel (replaces Leaflet popups, which overflowed the screen) -->
-    <aside id="cafePanel" class="is-hidden flex flex-col bg-oat-50 rounded-2xl border-2 border-charcoal-900 shadow-pop overflow-hidden" aria-live="polite">
+    <aside id="cafePanel" class="is-hidden flex flex-col bg-oat-50 rounded-2xl border-2 border-charcoal-900 shadow-pop overflow-hidden" aria-live="polite" aria-hidden="true" inert>
       <div id="cafePanelBody" class="flex-1 overflow-y-auto overscroll-contain scroll-fade"></div>
     </aside>
   </section>
@@ -639,9 +645,9 @@
 
     // ------------------------------------------------------------ tabs
     function switchTab(tab, { push = true } = {}) {
-      BottomNav.reset();
       if (tab === 'search') tab = 'home';   // old deep link; search lives on home now
       if (!TABS.includes(tab)) tab = 'home';
+      BottomNav.setPinned(tab === 'map');
       currentTab = tab;
       TABS.forEach(t => {
         const cap = t.charAt(0).toUpperCase() + t.slice(1);
@@ -966,7 +972,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:18:45.684Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:22:51.302Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1078,14 +1084,29 @@
     let selectedCafeId = null;
     const markersByCafe = new Map();
     let leafletLoading = null;
-    const mapLayoutObserver = new ResizeObserver(() => {
+    const mobileCafePanel = window.matchMedia('(max-width: 767px)');
+    function syncCafePanelLayout() {
+      const open = selectedCafeId !== null;
+      document.getElementById('viewMap').classList.toggle('cafe-panel-open', open);
+      const toolbar = document.getElementById('mapToolbar');
+      toolbar.inert = open && mobileCafePanel.matches;
+      toolbar.setAttribute('aria-hidden', String(toolbar.inert));
+    }
+    mobileCafePanel.addEventListener('change', syncCafePanelLayout);
+    function updateMapLayout() {
       if (currentTab !== 'map') return;
       document.documentElement.style.setProperty('--header-h', document.getElementById('appHeader').offsetHeight + 'px');
       document.documentElement.style.setProperty('--map-toolbar-h', document.getElementById('mapToolbar').offsetHeight + 'px');
+      const nav = document.getElementById('bottomNav');
+      const clearance = nav.offsetHeight + (parseFloat(getComputedStyle(nav).bottom) || 0) + 16;
+      document.documentElement.style.setProperty('--map-nav-clearance', clearance + 'px');
       if (map) map.invalidateSize();
-    });
+    }
+    const mapLayoutObserver = new ResizeObserver(updateMapLayout);
     mapLayoutObserver.observe(document.getElementById('mapToolbar'));
     mapLayoutObserver.observe(document.getElementById('appHeader'));
+    mapLayoutObserver.observe(document.getElementById('bottomNav'));
+    window.addEventListener('resize', updateMapLayout, { passive: true });
 
     // Basemap: OpenFreeMap vector tiles (free, no API key) drawn by MapLibre
     // inside Leaflet, so markers and panning stay plain Leaflet.
@@ -1111,7 +1132,7 @@
 
     async function ensureMap() {
       // Keep the map exactly under the header even if the header wraps.
-      document.documentElement.style.setProperty('--header-h', document.getElementById('appHeader').offsetHeight + 'px');
+      updateMapLayout();
       await loadLeaflet();
       if (!map) {
         map = L.map('mapCanvas', { center: [44.9601, -93.2166], zoom: 12, zoomControl: false, attributionControl: true });
@@ -1129,7 +1150,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:18:45.684Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:22:51.302Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
@@ -1255,14 +1276,24 @@
             `<p class="px-1 py-2 text-xs text-charcoal-700 italic">${dropRecencyDays < 30 ? 'No posts or drops in this date range. Widen the slider to see older listings.' : 'No seasonal drops tracked here yet.'}</p>`}
         </div>`;
       const panel = document.getElementById('cafePanel');
+      panel.inert = false;
+      panel.setAttribute('aria-hidden', 'false');
       panel.classList.remove('is-hidden');
+      syncCafePanelLayout();
       document.getElementById('cafePanelBody').scrollTop = 0;
     }
 
     function closeCafePanel() {
-      document.getElementById('cafePanel').classList.add('is-hidden');
+      const panel = document.getElementById('cafePanel');
+      const returnFocus = panel.contains(document.activeElement);
+      const marker = markersByCafe.get(selectedCafeId);
+      panel.inert = true;
+      panel.setAttribute('aria-hidden', 'true');
+      panel.classList.add('is-hidden');
       selectedCafeId = null;
+      syncCafePanelLayout();
       markSelectedPin();
+      if (returnFocus) marker?.getElement()?.focus({ preventScroll: true });
     }
 
     async function focusCafe(cafeId) {
@@ -1275,7 +1306,8 @@
     }
 
     // Puts the cafe's pin in the middle of the part of the map you can see:
-    // beside the cafe panel on desktop, between the toolbar and the panel on phones.
+    // beside the cafe panel on desktop. On phones the panel overlays the map;
+    // keep the cafe centered so it is easy to find when the panel closes.
     // Call after openCafePanel so the panel's size is known.
     function centerOnCafe(c, zoom = map.getZoom()) {
       const size = map.getSize();
@@ -1283,10 +1315,6 @@
       let left = 0, right = size.x, top = 0, bottom = size.y;
       if (window.innerWidth >= 768) {
         left = panel.offsetLeft + panel.offsetWidth;
-      } else {
-        const bar = document.getElementById('mapToolbar');
-        top = bar.offsetTop + bar.offsetHeight;
-        bottom = panel.offsetTop;
       }
       const offset = L.point((left + right) / 2 - size.x / 2, (top + bottom) / 2 - size.y / 2);
       const center = map.unproject(map.project([c.lat, c.lon], zoom).subtract(offset), zoom);
