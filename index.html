@@ -203,7 +203,7 @@
     <!-- HOME -->
     <section id="viewHome" class="space-y-4"><p class="text-[11px] text-charcoal-700 py-2">Preview · Oct 17, 2026 snapshot · data stays fixed until the next update.</p>
       <!-- Hero: our own illustration. Real drinks start in the grid below. -->
-      <div class="neo-card bg-coral-500 text-charcoal-900 rounded-3xl overflow-hidden sm:flex">
+      <div class="neo-card bg-butter-300 text-charcoal-900 rounded-3xl overflow-hidden sm:flex">
         <div class="p-5 sm:p-6 sm:w-1/2 flex flex-col justify-center">
           <h1 class="font-title font-normal text-3xl sm:text-[32px] uppercase leading-[0.95]">Twin Cities Radar</h1>
           <p class="text-sm font-medium mt-2 text-charcoal-900/85">Seasonal drinks from independent cafes, tracked as they drop.</p>
@@ -972,7 +972,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:27:26.456Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:29:19.202Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1150,7 +1150,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:27:26.456Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:29:19.202Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
