@@ -170,6 +170,11 @@
     .recency-slider::-moz-range-thumb { width: 9px; height: 9px; border: 2px solid #FAF7F2; border-radius: 50%; background: #74665A; box-shadow: 0 0 0 1px #74665A; }
     .recency-slider:focus-visible { outline: 2px solid #E05340; outline-offset: 2px; border-radius: 8px; }
     @media (max-width: 767px) { .leaflet-top.leaflet-right { top: calc(var(--map-toolbar-h, 170px) + 24px); } }
+    #bottomNav { bottom: max(16px, env(safe-area-inset-bottom)); transition: transform .22s ease, opacity .18s ease, visibility 0s; }
+    .nav-is-collapsed #bottomNav { transform: translateY(calc(100% + 32px + env(safe-area-inset-bottom))); opacity: 0; visibility: hidden; transition: transform .22s ease, opacity .18s ease, visibility 0s .22s; }
+    #navReveal { position: fixed; bottom: max(4px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 40; min-width: 80px; min-height: 44px; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease; }
+    .nav-is-collapsed #navReveal { opacity: 1; visibility: visible; pointer-events: auto; }
+    .nav-handle-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: #FAF7F2F5; border: 1px solid #1C19175C; border-radius: 999px; box-shadow: 0 1px 2px #1C19171A; font-size: 11px; font-weight: 600; color: #44403C; }
   </style>
 <meta name="robots" content="noindex,nofollow">
 </head>
@@ -345,7 +350,8 @@
   </div>
 
   <!-- FLOATING BOTTOM NAV -->
-  <nav class="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none" aria-label="Main">
+  <div id="navDock">
+  <nav id="bottomNav" class="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none" aria-label="Main">
     <div class="max-w-sm mx-auto bg-oat-100 text-charcoal-900 rounded-2xl border-2 border-charcoal-900 shadow-pop-sm p-1.5 flex items-center justify-around gap-1.5 pointer-events-auto">
       <button onclick="switchTab('home')" id="navHome" class="nav-tab"><span class="text-base" aria-hidden="true">🏠</span><span class="text-[10px]">Home</span></button>
       <button onclick="switchTab('map')" id="navMap" class="nav-tab"><span class="text-base" aria-hidden="true">🗺️</span><span class="text-[10px]">Map</span></button>
@@ -353,9 +359,14 @@
       <button onclick="switchTab('cafes')" id="navCafes" class="nav-tab"><span class="text-base" aria-hidden="true">☕</span><span class="text-[10px]">Cafes</span></button>
     </div>
   </nav>
+  <button id="navReveal" type="button" aria-label="Show navigation" aria-controls="bottomNav" aria-expanded="true" aria-hidden="true" inert>
+    <span class="nav-handle-pill"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Menu</span>
+  </button>
+  </div>
 
   <script src="/coffee-radar-preview/js/drink-art.js"></script>
   <script src="/coffee-radar-preview/js/drop-recency.js"></script>
+  <script src="/coffee-radar-preview/js/bottom-nav.js"></script>
   <script>
     // ------------------------------------------------------------ state
     let allDrinks = [];
@@ -627,6 +638,7 @@
 
     // ------------------------------------------------------------ tabs
     function switchTab(tab, { push = true } = {}) {
+      BottomNav.reset();
       if (tab === 'search') tab = 'home';   // old deep link; search lives on home now
       if (!TABS.includes(tab)) tab = 'home';
       currentTab = tab;
@@ -953,7 +965,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:04:55.784Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:13:50.558Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1116,7 +1128,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:04:55.784Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:13:50.558Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
