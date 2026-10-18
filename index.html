@@ -371,9 +371,9 @@
   </button>
   </div>
 
-  <script src="/coffee-radar-preview/js/drink-art.js"></script>
-  <script src="/coffee-radar-preview/js/drop-recency.js"></script>
-  <script src="/coffee-radar-preview/js/bottom-nav.js"></script>
+  <script src="/coffee-radar-preview/js/drink-art.js?v=ccaf45eff874"></script>
+  <script src="/coffee-radar-preview/js/drop-recency.js?v=720ebdbc7aeb"></script>
+  <script src="/coffee-radar-preview/js/bottom-nav.js?v=6ab974c05aad"></script>
   <script>
     // ------------------------------------------------------------ state
     let allDrinks = [];
@@ -972,7 +972,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:22:51.302Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:23:59.156Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1150,7 +1150,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:22:51.302Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:23:59.156Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
