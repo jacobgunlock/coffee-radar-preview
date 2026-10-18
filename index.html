@@ -23,16 +23,17 @@
             sans: ['"Plus Jakarta Sans"', 'sans-serif'],
           },
           colors: {
-            butter: { 50: '#FFFEF7', 100: '#FFFBEA', 200: '#FFF3C4', 300: '#FDE68A' },
-            oat: { 50: '#FAF7F2', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4', 900: '#2A201A' },
-            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#FF6B57', 600: '#E05340' },
+            white: '#FFFEF9',
+            butter: { 50: '#FFFEF7', 100: '#FFFBF1', 200: '#FFF3DC', 300: '#F1D67C' },
+            oat: { 50: '#FBF5E9', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4', 900: '#2A201A' },
+            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#D65F48', 600: '#D65F48' },
             matcha: { 50: '#F2FBF5', 100: '#DCFCE7', 200: '#BBF7D0', 400: '#4ADE80', 600: '#16A34A', 800: '#166534', 900: '#14532D' },
-            charcoal: { 900: '#1C1917', 800: '#292524', 700: '#44403C' }
+            charcoal: { 900: '#29241F', 800: '#292524', 700: '#44403C' }
           },
           boxShadow: {
-            'pop': '4px 4px 0px #1C1917',
-            'pop-sm': '2px 2px 0px #1C1917',
-            'pop-lg': '6px 6px 0px #1C1917',
+            'pop': '4px 4px 0px #29241F',
+            'pop-sm': '2px 2px 0px #29241F',
+            'pop-lg': '6px 6px 0px #29241F',
           }
         }
       }
@@ -42,25 +43,25 @@
   <style>
     :root { --header-h: 57px; }
     body {
-      background-color: #FAF7F2;
-      color: #1C1917;
+      background-color: #FBF5E9;
+      color: #29241F;
       font-family: 'Plus Jakarta Sans', sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
     .neo-card {
-      border: 2px solid #1C1917;
-      box-shadow: 4px 4px 0px #1C1917;
+      border: 2px solid #29241F;
+      box-shadow: 4px 4px 0px #29241F;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .neo-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #1C1917; }
+    .neo-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #29241F; }
 
     .neo-btn {
-      border: 2px solid #1C1917;
-      box-shadow: 3px 3px 0px #1C1917;
+      border: 2px solid #29241F;
+      box-shadow: 3px 3px 0px #29241F;
       transition: transform 0.1s ease, box-shadow 0.1s ease;
     }
-    .neo-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #1C1917; }
+    .neo-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #29241F; }
 
     /* Masonry / bento grid. Every card takes the shape of its photo, so nothing
        is cropped and nothing is letterboxed. Row spans are measured in JS on a
@@ -84,7 +85,7 @@
 
     /* Map tab: fills the viewport between the header and the screen bottom. */
     #viewMap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 20; }
-    #mapCanvas { position: absolute; inset: 0; z-index: 0; background: #FAF7F2; }
+    #mapCanvas { position: absolute; inset: 0; z-index: 0; background: #FBF5E9; }
     .leaflet-container { font-family: 'Plus Jakarta Sans', sans-serif !important; }
     .cafe-pin { background: none; border: none; }
     .cafe-pin:focus { outline: none; }
@@ -93,7 +94,7 @@
     /* Selected cafe: bigger pin, white + ink ring, pulsing halo behind it. */
     .cafe-pin.is-selected > div {
       transform: scale(1.35);
-      box-shadow: 0 0 0 3px #fff, 0 0 0 6px #1C1917, 3px 3px 0 6px #1C1917;
+      box-shadow: 0 0 0 3px #fff, 0 0 0 6px #29241F, 3px 3px 0 6px #29241F;
     }
     /* The halo sits on Leaflet's icon wrapper, so it paints behind the scaled pin. */
     .cafe-pin.is-selected::before {
@@ -114,6 +115,16 @@
       #cafePanel { left: 16px; right: auto; top: calc(var(--map-toolbar-h, 170px) + 24px); bottom: var(--map-nav-clearance, 108px); width: 380px; max-height: none; }
     }
     #cafePanel.is-hidden { transform: translateY(24px); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .24s ease, opacity .18s ease, visibility 0s .24s; }
+    .map-filters-chevron { transition: transform .18s ease; }
+    .map-filters-toggle[aria-expanded="true"] .map-filters-chevron { transform: rotate(180deg); }
+    .map-filter-row button { white-space: nowrap; }
+    @media (min-width: 768px) {
+      #mapFiltersToggle { display: none; }
+    }
+    @media (max-width: 359px) {
+      .map-filter-row, #mapFilterOptions { gap: 4px; }
+      .map-filter-row button { padding-left: 6px; padding-right: 6px; font-size: 10px; }
+    }
     #mapToolbar { transition: transform .24s ease, opacity .18s ease, visibility 0s; }
     @media (max-width: 767px) {
       #cafePanel { top: 12px; bottom: var(--map-nav-clearance, 108px); max-height: none; }
@@ -122,7 +133,7 @@
     }
 
     /* Save button: outline heart when off, solid white heart on coral when on. */
-    .fav-btn { background: #fff; color: #1C1917; transition: background-color .15s ease, color .15s ease, transform .1s ease; }
+    .fav-btn { background: #fff; color: #29241F; transition: background-color .15s ease, color .15s ease, transform .1s ease; }
     .fav-btn:hover { transform: scale(1.08); }
     .fav-btn svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 2.4; }
     .fav-btn.is-on { background: #FF6B57; color: #fff; }
@@ -131,69 +142,69 @@
     @keyframes favPop { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 100% { transform: scale(1); } }
 
     .drink-art svg { display: block; width: 100%; height: 100%; }
-    .hero-stage { background-image: radial-gradient(#1C191724 1.2px, transparent 1.4px); background-size: 12px 12px; min-height: 170px; }
+    .hero-stage { background-image: radial-gradient(#29241F24 1.2px, transparent 1.4px); background-size: 12px 12px; min-height: 170px; }
     .hero-stage svg { overflow: visible; }
     .filter-select {
       display: block; width: 100%; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%231C1917' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center / 11px 8px;
-      border: 2px solid #1C1917; box-shadow: 3px 3px 0px #1C1917; border-radius: 12px;
+      border: 2px solid #29241F; box-shadow: 3px 3px 0px #29241F; border-radius: 12px;
       padding: 7px 32px 7px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px;
-      color: #1C1917; cursor: pointer;
+      color: #29241F; cursor: pointer;
     }
     .filter-select:focus-visible { outline: 2px solid #FF6B57; outline-offset: 2px; }
     .filter-select.is-set { background-color: #FFF3C4; }
     .dd-menu {
       position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; z-index: 35;
       max-height: min(300px, 55vh); overflow-y: auto; overscroll-behavior: contain;
-      background: #fff; border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; border-radius: 12px; padding: 4px;
+      background: #fff; border: 2px solid #29241F; box-shadow: 4px 4px 0px #29241F; border-radius: 12px; padding: 4px;
       scroll-margin-bottom: 100px;   /* clear the floating bottom nav when scrolled into view */
-      scrollbar-width: thin; scrollbar-color: #1C191733 transparent;
+      scrollbar-width: thin; scrollbar-color: #29241F33 transparent;
     }
     .dd-option {
       display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px;
       padding: 8px 10px; border-radius: 8px; text-align: left; white-space: nowrap;
-      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; color: #1C1917;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 12px; color: #29241F;
     }
     .dd-option:hover, .dd-option:focus-visible { background: #FFFBEA; outline: none; }
-    .dd-option[aria-selected="true"] { background: #1C1917; color: #fff; }
+    .dd-option[aria-selected="true"] { background: #29241F; color: #fff; }
     .dd-option .dd-count { opacity: .55; font-size: 11px; }
     /* Filler cards that even out the ragged bottom of the masonry grid. */
     .filler-card {
-      border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; border-radius: 1rem; overflow: hidden;
-      background-image: radial-gradient(#1C191722 1.2px, transparent 1.4px); background-size: 12px 12px;
+      border: 2px solid #29241F; box-shadow: 4px 4px 0px #29241F; border-radius: 1rem; overflow: hidden;
+      background-image: radial-gradient(#29241F22 1.2px, transparent 1.4px); background-size: 12px 12px;
     }
     .filler-card svg { display: block; overflow: visible; }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
     a:focus-visible, button:focus-visible { outline: 3px solid #E05340; outline-offset: 3px; }
-    .scroll-fade { scrollbar-width: thin; scrollbar-color: #1C191733 transparent; }
-    .recency-control { background: #FAF7F2F5; border: 1px solid #1C191724; border-radius: 12px; padding: 8px 12px 5px; }
+    .scroll-fade { scrollbar-width: thin; scrollbar-color: #29241F33 transparent; }
+    .recency-control { background: #FFFEF9; border: 2px solid #29241F; box-shadow: 4px 4px 0 #29241F; border-radius: 12px; padding: 8px 12px 5px; }
     .recency-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 11px; color: #6B625B; }
     .recency-heading output { color: #44403C; font-weight: 600; }
-    .recency-slider { appearance: none; display: block; width: 100%; height: 20px; margin: 2px 0 0; background: transparent; cursor: pointer; }
+    .recency-slider { appearance: none; display: block; width: 100%; height: 32px; margin: 2px 0 0; background: transparent; cursor: pointer; }
     .recency-slider::-webkit-slider-runnable-track { height: 3px; background: #DCCFC5; border-radius: 3px; }
     .recency-slider::-moz-range-track { height: 3px; background: #DCCFC5; border-radius: 3px; }
-    .recency-slider::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; margin-top: -5px; border: 2px solid #FAF7F2; border-radius: 50%; background: #74665A; box-shadow: 0 0 0 1px #74665A; }
-    .recency-slider::-moz-range-thumb { width: 9px; height: 9px; border: 2px solid #FAF7F2; border-radius: 50%; background: #74665A; box-shadow: 0 0 0 1px #74665A; }
+    .recency-slider::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -10.5px; border: 2px solid #FBF5E9; border-radius: 50%; background: #D65F48; box-shadow: 0 0 0 1px #D65F48; }
+    .recency-slider::-moz-range-thumb { width: 20px; height: 20px; border: 2px solid #FBF5E9; border-radius: 50%; background: #D65F48; box-shadow: 0 0 0 1px #D65F48; }
     .recency-slider:focus-visible { outline: 2px solid #E05340; outline-offset: 2px; border-radius: 8px; }
     @media (max-width: 767px) { .leaflet-top.leaflet-right { top: calc(var(--map-toolbar-h, 170px) + 24px); } }
     #bottomNav { bottom: max(16px, env(safe-area-inset-bottom)); transition: transform .22s ease, opacity .18s ease, visibility 0s; }
-    #bottomNav > div { box-shadow: 2px 2px 0 #1C1917, 0 10px 28px #1C191742, 0 3px 8px #1C191724; }
+    #bottomNav > div { box-shadow: 2px 2px 0 #29241F, 0 10px 28px #29241F42, 0 3px 8px #29241F24; }
     .nav-is-collapsed #bottomNav { transform: translateY(calc(100% + 32px + env(safe-area-inset-bottom))); opacity: 0; visibility: hidden; transition: transform .22s ease, opacity .18s ease, visibility 0s .22s; }
     #navReveal { position: fixed; bottom: max(4px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 40; min-width: 80px; min-height: 44px; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease; }
     .nav-is-collapsed #navReveal { opacity: 1; visibility: visible; pointer-events: auto; }
-    .nav-handle-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: #FAF7F2F5; border: 1px solid #1C19175C; border-radius: 999px; box-shadow: 0 3px 10px #1C191729, 0 1px 2px #1C19171A; font-size: 11px; font-weight: 600; color: #44403C; }
+    .nav-handle-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: #FFF3DC; border: 1px solid #29241F5C; border-radius: 999px; box-shadow: 0 3px 10px #29241F29, 0 1px 2px #29241F1A; font-size: 11px; font-weight: 600; color: #44403C; }
   </style>
 <meta name="robots" content="noindex,nofollow">
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-coral-400 selection:text-black">
 
   <!-- TOP BRAND HEADER -->
-  <header id="appHeader" class="sticky top-0 z-30 bg-coral-500 border-b-2 border-charcoal-900 px-4 py-3">
+  <header id="appHeader" class="sticky top-0 z-30 bg-butter-200 border-b-2 border-charcoal-900 px-4 py-3">
     <div class="max-w-md sm:max-w-xl md:max-w-3xl mx-auto flex items-center justify-between gap-3">
       <a href="#home" onclick="switchTab('home'); return false;" class="font-title font-normal text-xl tracking-tight text-charcoal-900">
-        coffee radar<span class="text-charcoal-900">.</span>
+        coffee radar<span class="text-coral-600">.</span>
       </a>
-      <a href="/coffee-radar-preview/about/" class="font-display font-bold text-xs rounded-full border-2 border-charcoal-900 px-3 py-1.5 bg-butter-100 hover:bg-butter-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">About</a>
+      <a href="/coffee-radar-preview/about/" class="font-display font-bold text-xs rounded-full border-2 border-charcoal-900 px-3 py-1.5 bg-white hover:bg-butter-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">About</a>
     </div>
   </header>
 
@@ -203,7 +214,7 @@
     <!-- HOME -->
     <section id="viewHome" class="space-y-4"><p class="text-[11px] text-charcoal-700 py-2">Preview · Oct 17, 2026 snapshot · data stays fixed until the next update.</p>
       <!-- Hero: our own illustration. Real drinks start in the grid below. -->
-      <div class="neo-card bg-butter-300 text-charcoal-900 rounded-3xl overflow-hidden sm:flex">
+      <div class="neo-card bg-butter-200 text-charcoal-900 rounded-3xl overflow-hidden sm:flex">
         <div class="p-5 sm:p-6 sm:w-1/2 flex flex-col justify-center">
           <h1 class="font-title font-normal text-3xl sm:text-[32px] uppercase leading-[0.95]">Twin Cities Radar</h1>
           <p class="text-sm font-medium mt-2 text-charcoal-900/85">Seasonal drinks from independent cafes, tracked as they drop.</p>
@@ -224,7 +235,7 @@
         <div id="neighborhoodDD" class="dd relative flex-1 min-w-[150px]"></div>
         <div id="typeDD" class="dd relative flex-1 min-w-[120px]"></div>
         <button id="filterPhotosToggle" onclick="togglePhotosSearchFilter()" aria-pressed="false" class="neo-btn px-3 py-2 rounded-xl bg-white font-display font-bold text-xs whitespace-nowrap">📸 With photo</button>
-        <button onclick="resetSearchFilters()" class="neo-btn px-3 py-2 rounded-xl bg-coral-400 hover:bg-coral-500 text-charcoal-900 text-xs font-display font-bold whitespace-nowrap">↺ Reset</button>
+        <button onclick="resetSearchFilters()" class="neo-btn px-3 py-2 rounded-xl bg-butter-300 hover:bg-butter-200 text-charcoal-900 text-xs font-display font-bold whitespace-nowrap">↺ Reset</button>
       </div>
 
       <div class="recency-control">
@@ -242,7 +253,7 @@
         <div class="text-4xl mb-2" aria-hidden="true">☕💨</div>
         <h3 class="font-title font-normal text-sm">No seasonal drops found</h3>
         <p class="text-xs text-charcoal-700 mt-1">Try "maple", "cardamom", "matcha", or reset filters.</p>
-        <button onclick="resetSearchFilters()" class="mt-3 neo-btn px-3 py-1.5 rounded-xl bg-butter-200 font-display font-bold text-xs">Reset all filters</button>
+        <button onclick="resetSearchFilters()" class="mt-3 neo-btn px-3 py-1.5 rounded-xl bg-butter-300 font-display font-bold text-xs">Reset all filters</button>
       </div>
     </section>
 
@@ -282,18 +293,23 @@
 
     <!-- Map toolbar -->
     <div id="mapToolbar" class="absolute z-[600] top-3 left-3 right-3 md:right-auto md:w-[380px] md:left-4 flex flex-col gap-2 pointer-events-none">
-      <div class="flex items-center bg-white rounded-xl border-2 border-charcoal-900 shadow-pop-sm px-3 py-2 gap-2 pointer-events-auto">
-        <span class="text-xs" aria-hidden="true">🔍</span>
-        <input type="search" id="mapSearchInput" oninput="onMapSearchInput()" placeholder="Cafe, neighborhood or drink..."
-          class="w-full min-w-0 bg-transparent text-xs font-medium focus:outline-none placeholder:text-charcoal-700/70">
+      <div class="flex items-center gap-2">
+        <div class="flex-1 min-w-0 flex items-center bg-white rounded-xl border-2 border-charcoal-900 shadow-pop-sm px-3 py-2 gap-2 pointer-events-auto">
+          <span class="text-xs" aria-hidden="true">🔍</span>
+          <input type="search" id="mapSearchInput" oninput="onMapSearchInput()" placeholder="Cafe, neighborhood or drink..."
+            class="w-full min-w-0 bg-transparent text-xs font-medium focus:outline-none placeholder:text-charcoal-700/70">
+        </div>
+        <span id="mapSpotCount" class="px-2 py-2 rounded-lg bg-butter-100 border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm whitespace-nowrap"></span>
       </div>
-      <div class="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+      <div class="map-filter-row flex items-center gap-1.5 pointer-events-auto">
+        <button id="mapFiltersToggle" type="button" onclick="toggleMapFilters()" aria-controls="mapFilterOptions mapFilters" aria-expanded="false" class="map-filters-toggle flex items-center gap-1 bg-white rounded-lg border-2 border-charcoal-900 shadow-pop-sm px-2 py-1 text-[11px] font-display font-bold">Filters <svg class="map-filters-chevron shrink-0" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div id="mapFilterOptions" class="flex items-center gap-1.5 hidden">
         <button onclick="setMapFilter('drops')" data-map-filter="drops" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">✨ Has drops</button>
         <button onclick="setMapFilter('matcha')" data-map-filter="matcha" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">🍵 Matcha</button>
         <button onclick="setMapFilter('all')" data-map-filter="all" class="map-filter px-2.5 py-1 rounded-lg border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm">All cafes</button>
-        <span id="mapSpotCount" class="ml-auto px-2 py-1 rounded-lg bg-butter-100 border-2 border-charcoal-900 text-[11px] font-display font-bold shadow-pop-sm whitespace-nowrap"></span>
+        </div>
       </div>
-      <div class="recency-control pointer-events-auto">
+      <div id="mapFilters" class="recency-control pointer-events-auto hidden">
         <div class="recency-heading"><label for="mapRecency">New posts & drops</label><output for="mapRecency" data-recency-label>30+ days</output></div>
         <input id="mapRecency" type="range" min="1" max="4" step="1" value="4" aria-valuetext="30+ days, all current drops" class="recency-slider" oninput="setDropRecency(this.value === '4' ? 30 : Number(this.value) * 7)">
       </div>
@@ -301,7 +317,7 @@
     </div>
 
     <!-- Cafe panel (replaces Leaflet popups, which overflowed the screen) -->
-    <aside id="cafePanel" class="is-hidden flex flex-col bg-oat-50 rounded-2xl border-2 border-charcoal-900 shadow-pop overflow-hidden" aria-live="polite" aria-hidden="true" inert>
+    <aside id="cafePanel" class="is-hidden flex flex-col bg-white rounded-2xl border-2 border-charcoal-900 shadow-pop overflow-hidden" aria-live="polite" aria-hidden="true" inert>
       <div id="cafePanelBody" class="flex-1 overflow-y-auto overscroll-contain scroll-fade"></div>
     </aside>
   </section>
@@ -359,7 +375,7 @@
   <!-- FLOATING BOTTOM NAV -->
   <div id="navDock">
   <nav id="bottomNav" class="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none" aria-label="Main">
-    <div class="max-w-sm mx-auto bg-oat-100 text-charcoal-900 rounded-2xl border-2 border-charcoal-900 shadow-pop-sm p-1.5 flex items-center justify-around gap-1.5 pointer-events-auto">
+    <div class="max-w-sm mx-auto bg-butter-200 text-charcoal-900 rounded-2xl border-2 border-charcoal-900 shadow-pop-sm p-1.5 flex items-center justify-around gap-1.5 pointer-events-auto">
       <button onclick="switchTab('home')" id="navHome" class="nav-tab"><span class="text-base" aria-hidden="true">🏠</span><span class="text-[10px]">Home</span></button>
       <button onclick="switchTab('map')" id="navMap" class="nav-tab"><span class="text-base" aria-hidden="true">🗺️</span><span class="text-[10px]">Map</span></button>
       <button onclick="switchTab('favorites')" id="navFavorites" class="nav-tab relative"><span class="text-base" aria-hidden="true">❤️</span><span class="text-[10px]">Saved</span><span id="navFavBadge" class="hidden absolute top-1 right-2 w-2 h-2 rounded-full bg-coral-500"></span></button>
@@ -462,7 +478,7 @@
     // drink's own data, on a colour picked per cafe. It never repeats a picture
     // across a cafe's cards and is always labelled as a drawing.
     const TILE_THEMES = [
-      { bg: '#FFF3C4', ink: '#1C1917', accent: '#FF6B57' },
+      { bg: '#FFF3C4', ink: '#29241F', accent: '#FF6B57' },
       { bg: '#DCFCE7', ink: '#14532D', accent: '#16A34A' },
       { bg: '#FFE3DE', ink: '#7A2418', accent: '#E05340' },
       { bg: '#E0F2FE', ink: '#0C3B5E', accent: '#0284C7' },
@@ -972,7 +988,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:29:19.202Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:45:30.121Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1093,6 +1109,19 @@
       toolbar.setAttribute('aria-hidden', String(toolbar.inert));
     }
     mobileCafePanel.addEventListener('change', syncCafePanelLayout);
+    function setMapFiltersExpanded(expanded) {
+      document.getElementById('mapFilters').classList.toggle('hidden', !expanded);
+      document.getElementById('mapFilterOptions').classList.toggle('hidden', !expanded);
+      document.getElementById('mapFiltersToggle').setAttribute('aria-expanded', String(expanded));
+    }
+    function toggleMapFilters() {
+      setMapFiltersExpanded(document.getElementById('mapFiltersToggle').getAttribute('aria-expanded') !== 'true');
+    }
+    function syncMapFiltersDisclosure() {
+      setMapFiltersExpanded(!mobileCafePanel.matches);
+    }
+    mobileCafePanel.addEventListener('change', syncMapFiltersDisclosure);
+    syncMapFiltersDisclosure();
     function updateMapLayout() {
       if (currentTab !== 'map') return;
       document.documentElement.style.setProperty('--header-h', document.getElementById('appHeader').offsetHeight + 'px');
@@ -1150,7 +1179,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:29:19.202Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:45:30.121Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);

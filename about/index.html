@@ -19,13 +19,14 @@
             sans: ['"Plus Jakarta Sans"', 'sans-serif'],
           },
           colors: {
-            butter: { 100: '#FFFBEA', 200: '#FFF3C4' },
-            oat: { 50: '#FAF7F2', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4' },
-            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#FF6B57', 600: '#E05340' },
+            white: '#FFFEF9',
+            butter: { 100: '#FFFBF1', 200: '#FFF3DC' },
+            oat: { 50: '#FBF5E9', 100: '#F5EFEB', 200: '#EBDCD0', 300: '#DCC5B4' },
+            coral: { 100: '#FFE3DE', 400: '#FF8A7A', 500: '#D65F48', 600: '#D65F48' },
             matcha: { 100: '#DCFCE7', 200: '#BBF7D0', 400: '#4ADE80', 800: '#166534' },
-            charcoal: { 900: '#1C1917', 800: '#292524', 700: '#44403C' }
+            charcoal: { 900: '#29241F', 800: '#292524', 700: '#44403C' }
           },
-          boxShadow: { 'pop': '4px 4px 0px #1C1917', 'pop-sm': '2px 2px 0px #1C1917' }
+          boxShadow: { 'pop': '4px 4px 0px #29241F', 'pop-sm': '2px 2px 0px #29241F' }
         }
       }
     }
@@ -34,20 +35,20 @@
     [hidden] { display: none !important; }
     button, select { cursor: pointer; }
     .page-tab[aria-current="page"] { background: #FFF3C4; }
-    body { background-color: #FAF7F2; color: #1C1917; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .neo-card { border: 2px solid #1C1917; box-shadow: 4px 4px 0px #1C1917; }
-    .neo-btn { border: 2px solid #1C1917; box-shadow: 3px 3px 0px #1C1917; transition: transform .1s ease, box-shadow .1s ease; }
-    .neo-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #1C1917; }
+    body { background-color: #FBF5E9; color: #29241F; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .neo-card { border: 2px solid #29241F; box-shadow: 4px 4px 0px #29241F; }
+    .neo-btn { border: 2px solid #29241F; box-shadow: 3px 3px 0px #29241F; transition: transform .1s ease, box-shadow .1s ease; }
+    .neo-btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0px #29241F; }
     .neo-btn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
-    .tab[aria-selected="true"] { background: #1C1917; color: #fff; }
+    .tab[aria-selected="true"] { background: #29241F; color: #fff; }
     .tab:focus-visible, .neo-btn:focus-visible, a:focus-visible { outline: 2px solid #FF6B57; outline-offset: 2px; }
     .chip {
       display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px;
-      border: 1.5px solid #1C1917; background: #fff; font-family: 'Space Grotesk', sans-serif;
+      border: 1.5px solid #29241F; background: #fff; font-family: 'Space Grotesk', sans-serif;
       font-weight: 700; font-size: 11px; line-height: 16px; white-space: nowrap;
     }
     a.chip:hover, button.chip:hover { background: #FFFBEA; }
-    button.chip[aria-expanded="true"] { background: #1C1917; color: #fff; }
+    button.chip[aria-expanded="true"] { background: #29241F; color: #fff; }
     .chip-quiet { border-color: transparent; background: #F5EFEB; color: #44403C; font-weight: 600; }
     .meter { width: 56px; height: 6px; border-radius: 9999px; background: #EBDCD0; overflow: hidden; }
     .meter > span { display: block; height: 100%; border-radius: 9999px; }
@@ -59,10 +60,10 @@
 </head>
 
 <body class="min-h-screen">
-  <header class="border-b-2 border-charcoal-900 bg-coral-500">
+  <header class="border-b-2 border-charcoal-900 bg-butter-200">
     <div class="max-w-4xl mx-auto px-5 py-4 flex items-center justify-between gap-4">
-      <a href="/coffee-radar-preview/" class="font-title text-lg">coffee radar<span class="text-charcoal-900">.</span></a>
-      <a href="/coffee-radar-preview/" class="neo-btn bg-butter-200 rounded-xl px-3 py-2 text-xs font-bold">Find a drink ↗</a>
+      <a href="/coffee-radar-preview/" class="font-title text-lg">coffee radar<span class="text-coral-600">.</span></a>
+      <a href="/coffee-radar-preview/" class="neo-btn bg-white rounded-xl px-3 py-2 text-xs font-bold">Find a drink ↗</a>
     </div>
   </header>
   <main class="max-w-4xl mx-auto px-5 py-8 sm:py-12"><p class="text-[11px] text-charcoal-700 py-2">Preview · Oct 17, 2026 snapshot · data stays fixed until the next update.</p>
