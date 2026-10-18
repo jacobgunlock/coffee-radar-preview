@@ -84,7 +84,7 @@
 
     /* Map tab: fills the viewport between the header and the screen bottom. */
     #viewMap { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 20; }
-    #mapCanvas { position: absolute; inset: 0; background: #FAF7F2; }
+    #mapCanvas { position: absolute; inset: 0; z-index: 0; background: #FAF7F2; }
     .leaflet-container { font-family: 'Plus Jakarta Sans', sans-serif !important; }
     .cafe-pin { background: none; border: none; }
     .cafe-pin:focus { outline: none; }
@@ -966,7 +966,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:16:53.434Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:18:45.684Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1129,7 +1129,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:16:53.434Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:18:45.684Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
