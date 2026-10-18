@@ -188,10 +188,10 @@
 <body class="min-h-screen flex flex-col antialiased selection:bg-coral-400 selection:text-black">
 
   <!-- TOP BRAND HEADER -->
-  <header id="appHeader" class="sticky top-0 z-30 bg-[#FAF7F2]/95 backdrop-blur-md border-b-2 border-charcoal-900 px-4 py-3">
+  <header id="appHeader" class="sticky top-0 z-30 bg-coral-500 border-b-2 border-charcoal-900 px-4 py-3">
     <div class="max-w-md sm:max-w-xl md:max-w-3xl mx-auto flex items-center justify-between gap-3">
       <a href="#home" onclick="switchTab('home'); return false;" class="font-title font-normal text-xl tracking-tight text-charcoal-900">
-        coffee radar<span class="text-coral-500">.</span>
+        coffee radar<span class="text-charcoal-900">.</span>
       </a>
       <a href="/coffee-radar-preview/about/" class="font-display font-bold text-xs rounded-full border-2 border-charcoal-900 px-3 py-1.5 bg-butter-100 hover:bg-butter-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">About</a>
     </div>
@@ -972,7 +972,7 @@
     function runSearch() {
       const terms = (document.getElementById('searchInput').value || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
       const filtered = allDrinks.filter(d => {
-        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:23:59.156Z'))) return false;
+        if (!DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:27:26.456Z'))) return false;
         if (searchNeighborhood !== 'All' && (d.neighborhood || 'Twin Cities') !== searchNeighborhood) return false;
         if (searchPhotosOnly && !hasDrinkImage(d)) return false;
         if (searchType === 'matcha' && !isMatcha(d)) return false;
@@ -1150,7 +1150,7 @@
     }
 
     function cafeDrops(c) { return drinksByBrand.get(brandKey(c)) || []; }
-    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:23:59.156Z'))); }
+    function mapCafeDrops(c) { return cafeDrops(c).filter(d => DropRecency.matches(d, dropRecencyDays, new Date('2026-10-18T01:27:26.456Z'))); }
 
     function cafeMatchesMap(c) {
       const drops = mapCafeDrops(c);
